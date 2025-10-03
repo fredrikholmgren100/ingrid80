@@ -18,8 +18,11 @@
     }
     .gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 10px;
+    }
+    .gallery-item {
+      position: relative;
     }
     .gallery img {
       width: 100%;
@@ -30,6 +33,22 @@
     }
     .gallery img:hover {
       transform: scale(1.05);
+    }
+    .delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(255,0,0,0.8);
+      border: none;
+      color: white;
+      padding: 5px 8px;
+      border-radius: 50%;
+      font-size: 0.8em;
+      cursor: pointer;
+      display: none; /* only show on owner’s images */
+    }
+    .gallery-item:hover .delete-btn {
+      display: block;
     }
 
     /* Lightbox */
@@ -83,6 +102,8 @@
 
   <script>
     const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+    const params = new URLSearchParams(window.location.search);
+    const playerId = params.get("id"); // logged-in player
     let currentImageUrl = "";
 
     async function loadGallery() {
@@ -98,21 +119,39 @@
         if (player.gallery) {
           try {
             let arr = JSON.parse(player.gallery);
-            arr.forEach(url => addImage(url, player.name));
+            arr.forEach((url, index) => addImage(url, player.name, player.id, index, arr));
           } catch (e) {
-            // fallback if only single URL saved
-            addImage(player.gallery, player.name);
+            addImage(player.gallery, player.name, player.id, 0, [player.gallery]);
           }
         }
       });
     }
 
-    function addImage(url, name) {
+    function addImage(url, name, ownerId, index, galleryArray) {
+      let item = document.createElement("div");
+      item.className = "gallery-item";
+
       let img = document.createElement("img");
       img.src = url;
       img.alt = name;
       img.onclick = () => openLightbox(url);
-      document.getElementById("gallery").appendChild(img);
+      item.appendChild(img);
+
+      // Only show delete for logged-in player’s own images
+      if (playerId && parseInt(playerId) === ownerId) {
+        let delBtn = document.createElement("button");
+        delBtn.textContent = "🗑";
+        delBtn.className = "delete-btn";
+        delBtn.onclick = async (e) => {
+          e.stopPropagation(); // don’t trigger lightbox
+          if (confirm("Vill du ta bort den här bilden?")) {
+            await deleteImage(ownerId, index, galleryArray);
+          }
+        };
+        item.appendChild(delBtn);
+      }
+
+      document.getElementById("gallery").appendChild(item);
     }
 
     function openLightbox(url) {
@@ -132,6 +171,23 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+    }
+
+    async function deleteImage(ownerId, index, galleryArray) {
+      // Remove the image at index
+      galleryArray.splice(index, 1);
+
+      // Save updated array back to Sheety
+      await fetch(`${API_URL}/${ownerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blad1: { gallery: JSON.stringify(galleryArray) }
+        })
+      });
+
+      alert("Bilden har tagits bort.");
+      loadGallery();
     }
 
     loadGallery();
