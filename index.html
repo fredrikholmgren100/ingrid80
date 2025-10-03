@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="sv">
 <head>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C63FF">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Välkommen till Spelet</title>
@@ -114,5 +116,13 @@
 
   <!-- External script file -->
   <script src="script.js"></script>
+
+  <script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker registered"));
+}
+</script>
 </body>
 </html>
+
