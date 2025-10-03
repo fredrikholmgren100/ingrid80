@@ -72,21 +72,29 @@
     const playerId = params.get("id");
 
     // Fetch player name from Sheety
-    async function fetchPlayer() {
-      try {
-        let res = await fetch(`${API_URL}/${playerId}`);
-        let data = await res.json();
+async function fetchPlayer() {
+  try {
+    let res = await fetch(API_URL);
+    let data = await res.json();
 
-        // Get the sheet key (because Sheety names depend on your sheet)
-        let sheetKey = Object.keys(data)[0];
-        let player = data[sheetKey];
+    // Dynamic key (sheet name)
+    let sheetKey = Object.keys(data)[0];
+    let rows = data[sheetKey];
 
-        document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
-      } catch (err) {
-        console.error("Error fetching player:", err);
-        document.getElementById("welcome").textContent = "Hej, spelare!";
-      }
+    // Find player by ID
+    let player = rows.find(r => r.id == playerId);
+
+    if (player) {
+      document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
+    } else {
+      document.getElementById("welcome").textContent = "Hej, spelare!";
     }
+  } catch (err) {
+    console.error("Error fetching player:", err);
+    document.getElementById("welcome").textContent = "Hej, spelare!";
+  }
+}
+
 
     fetchPlayer();
 
@@ -122,3 +130,4 @@
   </script>
 </body>
 </html>
+
