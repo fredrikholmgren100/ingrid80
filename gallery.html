@@ -23,7 +23,6 @@
     }
     .gallery img {
       width: 100%;
-      height: auto;
       border-radius: 8px;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,0.5);
@@ -33,7 +32,7 @@
       transform: scale(1.05);
     }
 
-    /* Fullscreen overlay */
+    /* Lightbox */
     #lightbox {
       display: none;
       position: fixed;
@@ -73,7 +72,7 @@
   <h1>📷 Galleri</h1>
   <div class="gallery" id="gallery"></div>
 
-  <!-- Fullscreen lightbox -->
+  <!-- Lightbox -->
   <div id="lightbox">
     <img id="lightboxImg" src="" alt="Gallery Image">
     <div class="lightbox-controls">
@@ -83,36 +82,38 @@
   </div>
 
   <script>
-    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1"; // replace with Sheety URL
+    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
     let currentImageUrl = "";
 
     async function loadGallery() {
       let res = await fetch(API_URL);
       let data = await res.json();
-      let sheetKey = Object.keys(data)[0];
+      let sheetKey = Object.keys(data)[0]; // should be "blad1"
       let rows = data[sheetKey];
 
       let galleryDiv = document.getElementById("gallery");
       galleryDiv.innerHTML = "";
 
-rows.forEach(player => {
-  if (player.gallery) {
-    try {
-      let arr = JSON.parse(player.gallery);
-      arr.forEach(url => addImage(url, player.name));
-    } catch (e) {
-      addImage(player.gallery, player.name);
+      rows.forEach(player => {
+        if (player.gallery) {
+          try {
+            let arr = JSON.parse(player.gallery);
+            arr.forEach(url => addImage(url, player.name));
+          } catch (e) {
+            // fallback if only single URL saved
+            addImage(player.gallery, player.name);
+          }
+        }
+      });
     }
-  }
-});
 
-      function addImage(url, name) {
-  let img = document.createElement("img");
-  img.src = url;
-  img.alt = name;
-  img.onclick = () => openLightbox(url);
-  document.getElementById("gallery").appendChild(img);
-}
+    function addImage(url, name) {
+      let img = document.createElement("img");
+      img.src = url;
+      img.alt = name;
+      img.onclick = () => openLightbox(url);
+      document.getElementById("gallery").appendChild(img);
+    }
 
     function openLightbox(url) {
       currentImageUrl = url;
@@ -127,7 +128,7 @@ rows.forEach(player => {
     function downloadImage() {
       const a = document.createElement("a");
       a.href = currentImageUrl;
-      a.download = "gallery_image.jpg"; // name when downloaded
+      a.download = "gallery_image.jpg";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -137,5 +138,3 @@ rows.forEach(player => {
   </script>
 </body>
 </html>
-
-
