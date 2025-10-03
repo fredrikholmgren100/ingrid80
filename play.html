@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1d1f27">
+  <meta name="theme-color" content="#1d1f27">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Din Speldashboard</title>
@@ -21,6 +21,7 @@
       width: 100%;
       max-width: 400px;
       text-align: center;
+      margin-top: 60px; /* space for menu button */
     }
     h1 {
       font-size: 1.8em;
@@ -32,40 +33,13 @@
       font-weight: bold;
       color: #ffd700;
     }
-    .games {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      margin-top: 20px;
-    }
     .game-card {
       background: #2a2d38;
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
       text-align: center;
-    }
-    .game-card h3 {
-      margin: 10px 0;
-    }
-    .progress-bar {
-      background: #444;
-      border-radius: 6px;
-      overflow: hidden;
-      margin: 10px 0;
-      height: 14px;
-    }
-    .progress {
-      background: #6C63FF;
-      height: 100%;
-      width: 0;
-      transition: width 0.5s;
-    }
-    .progress-label {
-      font-size: 0.85em;
-      margin-top: -6px;
-      margin-bottom: 8px;
-      color: #ccc;
+      margin-top: 20px;
     }
     button {
       margin-top: 10px;
@@ -82,69 +56,112 @@
     }
 
     .welcome-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px; /* space between items */
-  margin-bottom: 10px;
-}
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .welcome-wrapper h1 {
+      margin: 0;
+      font-size: 1.8em;
+    }
+    .welcome-img {
+      width: 60px;
+      height: 60px;
+    }
 
-.welcome-wrapper h1 {
-  margin: 0;
-  font-size: 1.8em;
-}
+    /* Hamburger button */
+    .menu-btn {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      font-size: 1.8em;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      z-index: 1001;
+    }
 
-.welcome-img {
-  width: 60px;   /* adjust size */
-  height: 60px;
+    /* Side menu */
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -240px;
+      width: 220px;
+      height: 100%;
+      background: #2a2d38;
+      padding-top: 60px;
+      transition: left 0.3s;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+    }
+    .side-menu a {
+      padding: 15px 20px;
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      border-bottom: 1px solid #444;
+      text-align: left;
+    }
+    .side-menu a:hover {
+      background: #6C63FF;
+    }
+    .side-menu.open {
+      left: 0;
+    }
+	.logo-under-timer {
+  width: 160px;   /* independent size */
+  height: auto;
+  margin-top: 12px;
 }
   </style>
 </head>
 <body>
+
+  <!-- Hamburger button -->
+  <button class="menu-btn" onclick="toggleMenu()">☰</button>
+
+  <!-- Side menu -->
+  <div id="sideMenu" class="side-menu">
+    <a href="#" onclick="openGame('bingo.html')">🎲 Bingo</a>
+    <a href="#" onclick="openGame('quiz.html')">❓ Quiz</a>
+    <a href="#" onclick="openGame('location.html')">🌍 Guess the Location</a>
+    <a href="#" onclick="openGame('easter.html')">🥚 Found the Easter Eggs</a>
+  </div>
+
   <div class="container">
     <div class="welcome-wrapper">
-  <img src="logo.png" alt="left decoration" class="welcome-img">
-  <h1 id="welcome">Hej, spelare!</h1>
-  <img src="viking.png" alt="right decoration" class="welcome-img">
-</div>
-    <div class="timer">Tid kvar: <span id="countdown">--:--:--</span></div>
+      <h1 id="welcome">Hej, spelare!</h1>
+      <img src="viking.png" alt="right decoration" class="welcome-img">
+    </div>
+    <div class="timer">Tid kvar att spela: <span id="countdown">--:--:--</span></div>
+<img src="logo.png" alt="left decoration" class="logo-under-timer">
 
-    <h2>Dina Spel</h2>
-    <div class="games">
 <div class="game-card">
-  <h3>📷 Gallery</h3>
-  <p>Ta en bild och ladda upp</p>
-  <input type="file" id="photoUpload" accept="image/*" capture="environment" style="margin-top:10px;">
-  <p style="margin-top:10px; font-size:0.9em; color:#ccc;">
-    Totalt antal bilder: <span id="photoCount">0</span>
+  <h3>🕰️ Times to keep</h3>
+  <p style="font-size:0.95em; color:#ccc; line-height:1.4;">
+    Här hittar du tiderna att minnas under festen:<br><br>
+    • 17:00 – Start och välkomstdrink 🍹<br>
+    • 18:30 – Middag serveras 🍽️<br>
+    • 20:00 – Bingo startar 🎲<br>
+    • 22:00 – Quiz och överraskningar ❓<br>
+    • 23:30 – Gemensam skål för Ingrid 🥂
   </p>
-  <button onclick="viewGallery()">Se galleriet</button>
 </div>
 
-      <div class="game-card">
-        <h3>🎲 Bingo</h3>
-        <div class="progress-bar"><div class="progress" id="bingoProgress"></div></div>
-        <div class="progress-label" id="bingoLabel">0% klart</div>
-        <button onclick="openGame('bingo.html')">Spela</button>
-      </div>
-      <div class="game-card">
-        <h3>❓ Quiz</h3>
-        <div class="progress-bar"><div class="progress" id="quizProgress"></div></div>
-        <div class="progress-label" id="quizLabel">0% klart</div>
-        <button onclick="openGame('quiz.html')">Spela</button>
-      </div>
-      <div class="game-card">
-        <h3>🌍 Guess the Location</h3>
-        <div class="progress-bar"><div class="progress" id="locationProgress"></div></div>
-        <div class="progress-label" id="locationLabel">0% klart</div>
-        <button onclick="openGame('location.html')">Spela</button>
-      </div>
-      <div class="game-card">
-        <h3>🥚 Found the Easter Eggs</h3>
-        <div class="progress-bar"><div class="progress" id="easterProgress"></div></div>
-        <div class="progress-label" id="easterLabel">0% klart</div>
-        <button onclick="openGame('easter.html')">Spela</button>
-      </div>
+
+    <!-- Gallery stays visible -->
+    <div class="game-card">
+      <h3>📷 Gallery</h3>
+      <p>Ta en bild och ladda upp</p>
+      <input type="file" id="photoUpload" accept="image/*" capture="environment" style="margin-top:10px;">
+      <p style="margin-top:10px; font-size:0.9em; color:#ccc;">
+        Totalt antal bilder: <span id="photoCount">0</span>
+      </p>
+      <button onclick="viewGallery()">Se galleriet</button>
     </div>
   </div>
 
@@ -159,6 +176,13 @@
   const UPLOAD_PRESET = "Ingrid80";      
 
   // =========================
+  // Side menu toggle
+  // =========================
+  function toggleMenu() {
+    document.getElementById("sideMenu").classList.toggle("open");
+  }
+
+  // =========================
   // Fetch Player Info
   // =========================
   async function fetchPlayer() {
@@ -170,17 +194,6 @@
 
       if (player) {
         document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
-
-        // Load progress if it exists
-        try {
-          let progress = JSON.parse(player.data || "{}");
-          setProgress("bingo", progress.bingo || 0);
-          setProgress("quiz", progress.quiz || 0);
-          setProgress("location", progress.location || 0);
-          setProgress("easter", progress.easter || 0);
-        } catch (e) {
-          console.log("No progress data yet.");
-        }
       }
     } catch (err) {
       console.error("Error fetching player:", err);
@@ -204,7 +217,7 @@
             let arr = JSON.parse(r.gallery);
             totalImages += arr.length;
           } catch (e) {
-            totalImages += 1; // fallback if only one link
+            totalImages += 1;
           }
         }
       });
@@ -223,7 +236,6 @@
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
 
-    // Upload to Cloudinary
     let res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
       method: "POST",
       body: formData
@@ -232,13 +244,11 @@
     let json = await res.json();
     let imageUrl = json.secure_url;
 
-    // Get the current row from Sheety
     let res2 = await fetch(`${API_URL}/${playerId}`);
     let data = await res2.json();
     let sheetKey = Object.keys(data)[0];
     let player = data[sheetKey];
 
-    // Parse existing gallery JSON, or start new array
     let gallery = [];
     try {
       gallery = JSON.parse(player.gallery || "[]");
@@ -246,10 +256,8 @@
       gallery = [];
     }
 
-    // Add new image
     gallery.push(imageUrl);
 
-    // Save updated gallery back to Sheety
     await fetch(`${API_URL}/${playerId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -262,7 +270,6 @@
     updatePhotoCount();
   }
 
-  // Trigger upload when selecting/taking a photo
   document.getElementById("photoUpload").addEventListener("change", function() {
     if (this.files && this.files[0]) {
       uploadPhoto(this.files[0]);
@@ -270,23 +277,16 @@
   });
 
   // =========================
-  // Navigation Functions
+  // Navigation
   // =========================
   function viewGallery() {
     window.location.href = "gallery.html?id=" + playerId;
   }
 
   window.openGame = function (url) {
+    toggleMenu(); // close menu after selecting
     window.location.href = url + "?id=" + encodeURIComponent(playerId);
   };
-
-  // =========================
-  // Progress Bars
-  // =========================
-  function setProgress(key, value) {
-    document.getElementById(key + "Progress").style.width = value + "%";
-    document.getElementById(key + "Label").textContent = value + "% klart";
-  }
 
   // =========================
   // Countdown Timer
@@ -308,9 +308,7 @@
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
     let text = "";
-    if (days > 0) {
-      text += days + "d ";
-    }
+    if (days > 0) text += days + "d ";
     text += (hours < 10 ? "0" + hours : hours) + ":"
           + (minutes < 10 ? "0" + minutes : minutes) + ":"
           + (seconds < 10 ? "0" + seconds : seconds);
@@ -321,27 +319,10 @@
   updateCountdown();
 
   // =========================
-  // Initial Load
+  // Init
   // =========================
   fetchPlayer();
   updatePhotoCount();
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
