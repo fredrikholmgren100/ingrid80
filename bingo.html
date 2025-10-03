@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bingo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1d1f27;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      margin: 0;
+    }
+    h1 {
+      margin-bottom: 15px;
+      font-size: 1.5em;
+    }
+    .bingo-board {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      width: 100%;
+      max-width: 450px;   /* prevents board from getting too wide */
+      margin: auto;
+    }
+    .cell {
+      background: #2a2d38;
+      padding: 15px 5px;
+      border-radius: 8px;
+      font-size: clamp(0.6em, 2.5vw, 0.9em); /* auto scales text */
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.3s, transform 0.2s;
+      word-wrap: break-word;
+    }
+    .cell.marked {
+      background: #6C63FF;
+      text-decoration: line-through;
+    }
+    .cell:active {
+      transform: scale(0.95);
+    }
+
+    /* Ensure squares stay square */
+    .cell {
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎲 Ingrid 80 Bingo</h1>
+  <div class="bingo-board" id="board"></div>
+
+  <script>
+    const phrases = [
+      "Har pratat med Ingrid 🎂","Sett Ingrid dansa 💃","Kan en sång från 40-talet 🎵",
+      "Känt Ingrid i mer än 10 år","Ätit tårta 🎂","Besökt Ingrid hemma 🏡",
+      "Vet hennes favoritmat 🍲","Varit i samma stad som Ingrid 🏙️","Har en gemensam vän 👥",
+      "Delat ett skratt 😂","Tagit ett foto idag 📷","Har sjungit för Ingrid 🎤",
+      "Vet hennes födelsedag 🎉","Känner någon av hennes barn 👶","Har spelat ett spel idag 🎮",
+      "Pratat om Ingrid nyligen 🗣️","Tagit en selfie 🤳","Skrivit en hälsning ✍️",
+      "Vet hennes favoritfärg 🎨","Har dansat idag 💃","Har applåderat 👏",
+      "Sagt 'Grattis' 🎉","Delat en hemlighet 🤐","Vet hennes smeknamn","Kramat någon idag 🤗"
+    ];
+
+    const board = document.getElementById("board");
+
+    // Shuffle & pick 25
+    let shuffled = phrases.sort(() => 0.5 - Math.random()).slice(0,25);
+
+    shuffled.forEach(text => {
+      let div = document.createElement("div");
+      div.className = "cell";
+      div.textContent = text;
+      div.onclick = () => div.classList.toggle("marked");
+      board.appendChild(div);
+    });
+  </script>
+</body>
+</html>
