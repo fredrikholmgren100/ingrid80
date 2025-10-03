@@ -169,9 +169,19 @@ async function updatePhotoCount() {
     let rows = data[sheetKey];
 
     // Count how many rows have a gallery photo
-    let count = rows.filter(r => r.gallery && r.gallery.trim() !== "").length;
+let totalImages = 0;
+rows.forEach(r => {
+  if (r.gallery) {
+    try {
+      let arr = JSON.parse(r.gallery);
+      totalImages += arr.length;
+    } catch (e) {
+      totalImages += 1; // fallback if only one link
+    }
+  }
+});
+document.getElementById("photoCount").textContent = totalImages;
 
-    document.getElementById("photoCount").textContent = count;
   } catch (err) {
     console.error("Error counting photos:", err);
   }
@@ -183,6 +193,7 @@ async function uploadPhoto(file) {
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
 
+  // Upload to Cloudinary
   let res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
     method: "POST",
     body: formData
@@ -191,18 +202,36 @@ async function uploadPhoto(file) {
   let json = await res.json();
   let imageUrl = json.secure_url;
 
-  // ✅ Save the image URL to the player’s row in Sheety
+  // Get the current row
+  let res2 = await fetch(`${API_URL}/${playerId}`);
+  let data = await res2.json();
+  let sheetKey = Object.keys(data)[0]; // should be "blad1"
+  let player = data[sheetKey];
+
+  // Parse existing gallery JSON, or start new array
+  let gallery = [];
+  try {
+    gallery = JSON.parse(player.gallery || "[]");
+  } catch (e) {
+    gallery = [];
+  }
+
+  // Add new image
+  gallery.push(imageUrl);
+
+  // Save updated gallery back to Sheety
   await fetch(`${API_URL}/${playerId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      blad1: { gallery: imageUrl }   // 👈 must match the sheet tab name
+      blad1: { gallery: JSON.stringify(gallery) }
     })
   });
 
   alert("Bilden har laddats upp!");
-  updatePhotoCount(); // refresh counter after upload
+  updatePhotoCount();
 }
+
 
 // Trigger upload when selecting/taking a photo
 document.getElementById("photoUpload").addEventListener("change", function() {
@@ -223,6 +252,7 @@ updatePhotoCount();
   </script>
 </body>
 </html>
+
 
 
 
