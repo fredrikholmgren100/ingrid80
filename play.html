@@ -244,6 +244,13 @@
   window.location.href = url + "?id=" + playerId;
 }
 
+    // Make openGame available to inline onclick handlers
+window.openGame = function (url) {
+  const params = new URLSearchParams(window.location.search);
+  const playerId = params.get("id");
+  window.location.href = `${url}?id=${encodeURIComponent(playerId)}`;
+};
+
     // Add new image
     gallery.push(imageUrl);
 
@@ -315,6 +322,7 @@
   </script>
 </body>
 </html>
+
 
 
 
