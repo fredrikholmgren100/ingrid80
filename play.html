@@ -158,7 +158,9 @@
   const CLOUD_NAME = "dtweoqypu";        
   const UPLOAD_PRESET = "Ingrid80";      
 
-  // Fetch player info
+  // =========================
+  // Fetch Player Info
+  // =========================
   async function fetchPlayer() {
     try {
       let res = await fetch(API_URL);
@@ -185,7 +187,9 @@
     }
   }
 
-  // Count how many photos are uploaded in total
+  // =========================
+  // Count Photos
+  // =========================
   async function updatePhotoCount() {
     try {
       let res = await fetch(API_URL);
@@ -211,7 +215,9 @@
     }
   }
 
-  // Upload photo to Cloudinary + save link in Sheety
+  // =========================
+  // Upload Photo
+  // =========================
   async function uploadPhoto(file) {
     const formData = new FormData();
     formData.append("file", file);
@@ -226,7 +232,7 @@
     let json = await res.json();
     let imageUrl = json.secure_url;
 
-    // Get the current row
+    // Get the current row from Sheety
     let res2 = await fetch(`${API_URL}/${playerId}`);
     let data = await res2.json();
     let sheetKey = Object.keys(data)[0];
@@ -239,17 +245,6 @@
     } catch (e) {
       gallery = [];
     }
-    
-    function openGame(url) {
-  window.location.href = url + "?id=" + playerId;
-}
-
-    // Make openGame available to inline onclick handlers
-window.openGame = function (url) {
-  const params = new URLSearchParams(window.location.search);
-  const playerId = params.get("id");
-  window.location.href = `${url}?id=${encodeURIComponent(playerId)}`;
-};
 
     // Add new image
     gallery.push(imageUrl);
@@ -274,18 +269,28 @@ window.openGame = function (url) {
     }
   });
 
-  // Open gallery page
+  // =========================
+  // Navigation Functions
+  // =========================
   function viewGallery() {
     window.location.href = "gallery.html?id=" + playerId;
   }
 
-  // Progress bar helper
+  window.openGame = function (url) {
+    window.location.href = url + "?id=" + encodeURIComponent(playerId);
+  };
+
+  // =========================
+  // Progress Bars
+  // =========================
   function setProgress(key, value) {
     document.getElementById(key + "Progress").style.width = value + "%";
     document.getElementById(key + "Label").textContent = value + "% klart";
   }
 
-  // Countdown timer
+  // =========================
+  // Countdown Timer
+  // =========================
   const reviewDate = new Date("2025-10-10T18:00:00").getTime();
   function updateCountdown() {
     const now = new Date().getTime();
@@ -315,13 +320,15 @@ window.openGame = function (url) {
   const timerInterval = setInterval(updateCountdown, 1000);
   updateCountdown();
 
-  // Initial load
+  // =========================
+  // Initial Load
+  // =========================
   fetchPlayer();
   updatePhotoCount();
-
   </script>
 </body>
 </html>
+
 
 
 
