@@ -125,133 +125,171 @@
   </div>
 
   <script>
-    // ✅ Correct Sheety base URL (no blad1 at the end)
-const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
-const params = new URLSearchParams(window.location.search);
-const playerId = params.get("id");
+  <script>
+  // Sheety base URL
+  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+  const params = new URLSearchParams(window.location.search);
+  const playerId = params.get("id");
 
-const CLOUD_NAME = "dtweoqypu";        // your Cloudinary cloud name
-const UPLOAD_PRESET = "Ingrid80";      // the unsigned preset name you created in Cloudinary
+  // Cloudinary
+  const CLOUD_NAME = "dtweoqypu";        
+  const UPLOAD_PRESET = "Ingrid80";      
 
-// Fetch player info
-async function fetchPlayer() {
-  try {
-    let res = await fetch(API_URL);
-    let data = await res.json();
-    let sheetKey = Object.keys(data)[0]; // e.g. "bingoPlayers"
-    let player = data[sheetKey].find(r => r.id == playerId);
-
-    if (player) {
-      document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
-
-      // Load progress if it exists
-      try {
-        let progress = JSON.parse(player.data || "{}");
-        setProgress("bingo", progress.bingo || 0);
-        setProgress("quiz", progress.quiz || 0);
-        setProgress("location", progress.location || 0);
-        setProgress("easter", progress.easter || 0);
-      } catch (e) {
-        console.log("No progress data yet.");
-      }
-    }
-  } catch (err) {
-    console.error("Error fetching player:", err);
-  }
-}
-
-// Count how many photos are uploaded in total
-async function updatePhotoCount() {
-  try {
-    let res = await fetch(API_URL);
-    let data = await res.json();
-    let sheetKey = Object.keys(data)[0];
-    let rows = data[sheetKey];
-
-    // Count how many rows have a gallery photo
-let totalImages = 0;
-rows.forEach(r => {
-  if (r.gallery) {
+  // Fetch player info
+  async function fetchPlayer() {
     try {
-      let arr = JSON.parse(r.gallery);
-      totalImages += arr.length;
-    } catch (e) {
-      totalImages += 1; // fallback if only one link
+      let res = await fetch(API_URL);
+      let data = await res.json();
+      let sheetKey = Object.keys(data)[0]; // "blad1"
+      let player = data[sheetKey].find(r => r.id == playerId);
+
+      if (player) {
+        document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
+
+        // Load progress if it exists
+        try {
+          let progress = JSON.parse(player.data || "{}");
+          setProgress("bingo", progress.bingo || 0);
+          setProgress("quiz", progress.quiz || 0);
+          setProgress("location", progress.location || 0);
+          setProgress("easter", progress.easter || 0);
+        } catch (e) {
+          console.log("No progress data yet.");
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching player:", err);
     }
   }
-});
-document.getElementById("photoCount").textContent = totalImages;
 
-  } catch (err) {
-    console.error("Error counting photos:", err);
-  }
-}
+  // Count how many photos are uploaded in total
+  async function updatePhotoCount() {
+    try {
+      let res = await fetch(API_URL);
+      let data = await res.json();
+      let sheetKey = Object.keys(data)[0];
+      let rows = data[sheetKey];
 
-// Upload photo to Cloudinary + save link in Sheety
-async function uploadPhoto(file) {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", UPLOAD_PRESET);
+      let totalImages = 0;
+      rows.forEach(r => {
+        if (r.gallery) {
+          try {
+            let arr = JSON.parse(r.gallery);
+            totalImages += arr.length;
+          } catch (e) {
+            totalImages += 1; // fallback if only one link
+          }
+        }
+      });
+      document.getElementById("photoCount").textContent = totalImages;
 
-  // Upload to Cloudinary
-  let res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-    method: "POST",
-    body: formData
-  });
-
-  let json = await res.json();
-  let imageUrl = json.secure_url;
-
-  // Get the current row
-  let res2 = await fetch(`${API_URL}/${playerId}`);
-  let data = await res2.json();
-  let sheetKey = Object.keys(data)[0]; // should be "blad1"
-  let player = data[sheetKey];
-
-  // Parse existing gallery JSON, or start new array
-  let gallery = [];
-  try {
-    gallery = JSON.parse(player.gallery || "[]");
-  } catch (e) {
-    gallery = [];
+    } catch (err) {
+      console.error("Error counting photos:", err);
+    }
   }
 
-  // Add new image
-  gallery.push(imageUrl);
+  // Upload photo to Cloudinary + save link in Sheety
+  async function uploadPhoto(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
 
-  // Save updated gallery back to Sheety
-  await fetch(`${API_URL}/${playerId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      blad1: { gallery: JSON.stringify(gallery) }
-    })
+    // Upload to Cloudinary
+    let res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+      method: "POST",
+      body: formData
+    });
+
+    let json = await res.json();
+    let imageUrl = json.secure_url;
+
+    // Get the current row
+    let res2 = await fetch(`${API_URL}/${playerId}`);
+    let data = await res2.json();
+    let sheetKey = Object.keys(data)[0];
+    let player = data[sheetKey];
+
+    // Parse existing gallery JSON, or start new array
+    let gallery = [];
+    try {
+      gallery = JSON.parse(player.gallery || "[]");
+    } catch (e) {
+      gallery = [];
+    }
+
+    // Add new image
+    gallery.push(imageUrl);
+
+    // Save updated gallery back to Sheety
+    await fetch(`${API_URL}/${playerId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        blad1: { gallery: JSON.stringify(gallery) }
+      })
+    });
+
+    alert("Bilden har laddats upp!");
+    updatePhotoCount();
+  }
+
+  // Trigger upload when selecting/taking a photo
+  document.getElementById("photoUpload").addEventListener("change", function() {
+    if (this.files && this.files[0]) {
+      uploadPhoto(this.files[0]);
+    }
   });
 
-  alert("Bilden har laddats upp!");
+  // Open gallery page
+  function viewGallery() {
+    window.location.href = "gallery.html?id=" + playerId;
+  }
+
+  // Progress bar helper
+  function setProgress(key, value) {
+    document.getElementById(key + "Progress").style.width = value + "%";
+    document.getElementById(key + "Label").textContent = value + "% klart";
+  }
+
+  // Countdown timer
+  const reviewDate = new Date("2025-10-10T18:00:00").getTime();
+  function updateCountdown() {
+    const now = new Date().getTime();
+    const diff = reviewDate - now;
+
+    if (diff <= 0) {
+      document.getElementById("countdown").textContent = "Tiden är slut!";
+      clearInterval(timerInterval);
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    let text = "";
+    if (days > 0) {
+      text += days + "d ";
+    }
+    text += (hours < 10 ? "0" + hours : hours) + ":"
+          + (minutes < 10 ? "0" + minutes : minutes) + ":"
+          + (seconds < 10 ? "0" + seconds : seconds);
+
+    document.getElementById("countdown").textContent = text;
+  }
+  const timerInterval = setInterval(updateCountdown, 1000);
+  updateCountdown();
+
+  // Initial load
+  fetchPlayer();
   updatePhotoCount();
-}
-
-
-// Trigger upload when selecting/taking a photo
-document.getElementById("photoUpload").addEventListener("change", function() {
-  if (this.files && this.files[0]) {
-    uploadPhoto(this.files[0]);
-  }
-});
-
-// Open gallery page
-function viewGallery() {
-  window.location.href = "gallery.html";
-}
-
-// Initial load
-fetchPlayer();
-updatePhotoCount();
+</script>
 
   </script>
 </body>
 </html>
+
 
 
 
