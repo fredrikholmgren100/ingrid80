@@ -87,12 +87,16 @@
 
     <h2>Dina Spel</h2>
     <div class="games">
-	<div class="game-card">
+<div class="game-card">
   <h3>📷 Gallery</h3>
   <p>Ta en bild och ladda upp</p>
   <input type="file" id="photoUpload" accept="image/*" capture="environment" style="margin-top:10px;">
+  <p style="margin-top:10px; font-size:0.9em; color:#ccc;">
+    Totalt antal bilder: <span id="photoCount">0</span>
+  </p>
   <button onclick="viewGallery()">Se galleriet</button>
 </div>
+
       <div class="game-card">
         <h3>🎲 Bingo</h3>
         <div class="progress-bar"><div class="progress" id="bingoProgress"></div></div>
@@ -182,10 +186,28 @@
     function openGame(url) {
       window.location.href = url + "?id=" + playerId;
     }
-    // Replace with your Cloudinary info
-const CLOUD_NAME = "dtweoqypu";        // e.g. "mycloud123"
-const UPLOAD_PRESET = "Ingrid80"; // e.g. "gallery_preset"
+// Replace with your Cloudinary info
+const CLOUD_NAME = "dtweoqypu";        // your Cloudinary cloud name
+const UPLOAD_PRESET = "Ingrid80";      // your unsigned preset
 
+// Count how many photos are uploaded in total
+async function updatePhotoCount() {
+  try {
+    let res = await fetch(API_URL);
+    let data = await res.json();
+    let sheetKey = Object.keys(data)[0];
+    let rows = data[sheetKey];
+
+    // Count how many rows have a gallery photo
+    let count = rows.filter(r => r.gallery && r.gallery.trim() !== "").length;
+
+    document.getElementById("photoCount").textContent = count;
+  } catch (err) {
+    console.error("Error counting photos:", err);
+  }
+}
+
+// Upload photo to Cloudinary + save link in Sheety
 async function uploadPhoto(file) {
   const formData = new FormData();
   formData.append("file", file);
@@ -209,6 +231,7 @@ async function uploadPhoto(file) {
   });
 
   alert("Bilden har laddats upp!");
+  updatePhotoCount(); // refresh counter after upload
 }
 
 // Trigger upload when selecting/taking a photo
@@ -218,10 +241,15 @@ document.getElementById("photoUpload").addEventListener("change", function() {
   }
 });
 
+// Open gallery page
 function viewGallery() {
   window.location.href = "gallery.html";
 }
 
+// Initial load
+updatePhotoCount();
+
   </script>
 </body>
 </html>
+
