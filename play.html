@@ -125,70 +125,37 @@
   </div>
 
   <script>
-    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1"; // replace with your Sheety URL
-    const params = new URLSearchParams(window.location.search);
-    const playerId = params.get("id");
+    // ✅ Correct Sheety base URL (no blad1 at the end)
+const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers"; 
+const params = new URLSearchParams(window.location.search);
+const playerId = params.get("id");
 
-    // Fetch player info
-    async function fetchPlayer() {
+// Fetch player info
+async function fetchPlayer() {
+  try {
+    let res = await fetch(API_URL);
+    let data = await res.json();
+    let sheetKey = Object.keys(data)[0]; // e.g. "bingoPlayers"
+    let player = data[sheetKey].find(r => r.id == playerId);
+
+    if (player) {
+      document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
+
+      // Load progress if it exists
       try {
-        let res = await fetch(API_URL);
-        let data = await res.json();
-        let sheetKey = Object.keys(data)[0];
-        let player = data[sheetKey].find(r => r.id == playerId);
-
-        if (player) {
-          document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
-
-          // Load progress if it exists
-          try {
-            let progress = JSON.parse(player.data || "{}");
-            setProgress("bingo", progress.bingo || 0);
-            setProgress("quiz", progress.quiz || 0);
-            setProgress("location", progress.location || 0);
-            setProgress("easter", progress.easter || 0);
-          } catch (e) {
-            console.log("No progress data yet.");
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching player:", err);
+        let progress = JSON.parse(player.data || "{}");
+        setProgress("bingo", progress.bingo || 0);
+        setProgress("quiz", progress.quiz || 0);
+        setProgress("location", progress.location || 0);
+        setProgress("easter", progress.easter || 0);
+      } catch (e) {
+        console.log("No progress data yet.");
       }
     }
-
-    fetchPlayer();
-
-    // Countdown timer
-    const reviewDate = new Date("2025-10-10T18:00:00").getTime();
-    function updateCountdown() {
-      const now = new Date().getTime();
-      const diff = reviewDate - now;
-      if (diff <= 0) {
-        document.getElementById("countdown").textContent = "Tiden är slut!";
-        clearInterval(timerInterval);
-        return;
-      }
-      const h = Math.floor((diff % (1000*60*60*24))/(1000*60*60));
-      const m = Math.floor((diff % (1000*60*60))/(1000*60));
-      const s = Math.floor((diff % (1000*60))/1000);
-      document.getElementById("countdown").textContent =
-        (h<10?"0"+h:h)+":"+(m<10?"0"+m:m)+":"+(s<10?"0"+s:s);
-    }
-    const timerInterval = setInterval(updateCountdown, 1000);
-
-    // Progress bar helper
-    function setProgress(key, value) {
-      document.getElementById(key + "Progress").style.width = value + "%";
-      document.getElementById(key + "Label").textContent = value + "% klart";
-    }
-
-    // Open game
-    function openGame(url) {
-      window.location.href = url + "?id=" + playerId;
-    }
-// Replace with your Cloudinary info
-const CLOUD_NAME = "dtweoqypu";        // your Cloudinary cloud name
-const UPLOAD_PRESET = "Ingrid80";      // your unsigned preset
+  } catch (err) {
+    console.error("Error fetching player:", err);
+  }
+}
 
 // Count how many photos are uploaded in total
 async function updatePhotoCount() {
@@ -221,12 +188,12 @@ async function uploadPhoto(file) {
   let json = await res.json();
   let imageUrl = json.secure_url;
 
-  // Save the image URL to the player’s row in Sheety
+  // ✅ Save the image URL to the player’s row in Sheety
   await fetch(`${API_URL}/${playerId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      sheet1: { gallery: imageUrl }  // assumes you have a 'gallery' column
+      bingoPlayers: { gallery: imageUrl }  // must match your sheet name
     })
   });
 
@@ -247,9 +214,11 @@ function viewGallery() {
 }
 
 // Initial load
+fetchPlayer();
 updatePhotoCount();
 
   </script>
 </body>
 </html>
+
 
