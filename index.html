@@ -18,8 +18,8 @@
       flex-direction: column;
     }
     img.header-img {
-      max-width: 400px;
-      width: 100%;
+      max-width: 100%;
+      height: auto;
       border-radius: 12px;
       margin-bottom: 20px;
     }
@@ -39,24 +39,21 @@
     p {
       margin-bottom: 15px;
     }
-    input[type="text"] {
+    input[type="text"],
+    button {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       border: none;
       border-radius: 6px;
-      margin-bottom: 20px;
       font-size: 16px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
     }
     button {
       background: #6C63FF;
       color: #fff;
-      border: none;
-      padding: 14px 20px;
-      font-size: 16px;
       font-weight: bold;
-      border-radius: 6px;
       cursor: pointer;
-      width: 100%;
     }
     button:hover {
       background: #5a54d6;
@@ -70,7 +67,7 @@
   </style>
 </head>
 <body>
-  <img src="80_logo.png" alt="Game Image" class="header-img" />
+  <img src="80_logo.png" alt="Ingrid Nolander 80 Logo" class="header-img" />
   <div class="container">
     <h1>Välkommen till Spelet</h1>
     <p>Skriv in ditt namn för att fortsätta:</p>
@@ -82,4 +79,3 @@
   </div>
 </body>
 </html>
-
