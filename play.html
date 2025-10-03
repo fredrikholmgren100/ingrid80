@@ -126,7 +126,7 @@
 
   <script>
     // ✅ Correct Sheety base URL (no blad1 at the end)
-const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1"; 
+const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
 const params = new URLSearchParams(window.location.search);
 const playerId = params.get("id");
 
@@ -196,7 +196,7 @@ async function uploadPhoto(file) {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      bingoPlayers: { gallery: imageUrl }  // must match your sheet name
+      blad1: { gallery: imageUrl }   // 👈 must match the sheet tab name
     })
   });
 
@@ -223,6 +223,7 @@ updatePhotoCount();
   </script>
 </body>
 </html>
+
 
 
 
