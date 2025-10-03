@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Din Speldashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #1d1f27;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.6em;
+      margin-bottom: 10px;
+    }
+    .timer {
+      font-size: 1.2em;
+      margin: 15px 0;
+      font-weight: bold;
+      color: #ffd700;
+    }
+    .games {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .game-card {
+      background: #2a2d38;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .game-card:hover {
+      transform: scale(1.05);
+      background: #3a3d48;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="welcome">Hej, spelare!</h1>
+    <div class="timer">Tid kvar: <span id="countdown">--:--:--</span></div>
+
+    <h2>Välj ett spel</h2>
+    <div class="games">
+      <div class="game-card" onclick="openGame('bingo.html')">🎲 Bingo</div>
+      <div class="game-card" onclick="openGame('quiz.html')">❓ Quiz</div>
+      <div class="game-card" onclick="openGame('puzzle.html')">🧩 Puzzle</div>
+      <div class="game-card" onclick="openGame('memory.html')">🧠 Memory</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://api.sheety.co/YOUR_ID/bingoPlayers/sheet1"; // <-- replace with your Sheety URL
+
+    // Get player ID from URL
+    const params = new URLSearchParams(window.location.search);
+    const playerId = params.get("id");
+
+    // Fetch player name from Sheety
+    async function fetchPlayer() {
+      try {
+        let res = await fetch(`${API_URL}/${playerId}`);
+        let data = await res.json();
+
+        // Get the sheet key (because Sheety names depend on your sheet)
+        let sheetKey = Object.keys(data)[0];
+        let player = data[sheetKey];
+
+        document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
+      } catch (err) {
+        console.error("Error fetching player:", err);
+        document.getElementById("welcome").textContent = "Hej, spelare!";
+      }
+    }
+
+    fetchPlayer();
+
+    // Countdown timer (set your review date/time here)
+    const reviewDate = new Date("2025-10-10T18:00:00").getTime();
+
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const diff = reviewDate - now;
+
+      if (diff <= 0) {
+        document.getElementById("countdown").textContent = "Tiden är slut!";
+        clearInterval(timerInterval);
+        return;
+      }
+
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById("countdown").textContent =
+        (hours < 10 ? "0"+hours : hours) + ":" +
+        (minutes < 10 ? "0"+minutes : minutes) + ":" +
+        (seconds < 10 ? "0"+seconds : seconds);
+    }
+
+    const timerInterval = setInterval(updateCountdown, 1000);
+
+    // Open a game and keep the player ID
+    function openGame(url) {
+      window.location.href = url + "?id=" + playerId;
+    }
+  </script>
+</body>
+</html>
