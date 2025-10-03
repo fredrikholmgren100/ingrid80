@@ -239,6 +239,10 @@
     } catch (e) {
       gallery = [];
     }
+    
+    function openGame(url) {
+  window.location.href = url + "?id=" + playerId;
+}
 
     // Add new image
     gallery.push(imageUrl);
@@ -311,6 +315,7 @@
   </script>
 </body>
 </html>
+
 
 
 
