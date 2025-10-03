@@ -95,16 +95,24 @@
       let galleryDiv = document.getElementById("gallery");
       galleryDiv.innerHTML = "";
 
-      rows.forEach(player => {
-        if (player.gallery) {
-          let img = document.createElement("img");
-          img.src = player.gallery;
-          img.alt = player.name;
-          img.onclick = () => openLightbox(player.gallery);
-          galleryDiv.appendChild(img);
-        }
-      });
+rows.forEach(player => {
+  if (player.gallery) {
+    try {
+      let arr = JSON.parse(player.gallery);
+      arr.forEach(url => addImage(url, player.name));
+    } catch (e) {
+      addImage(player.gallery, player.name);
     }
+  }
+});
+
+      function addImage(url, name) {
+  let img = document.createElement("img");
+  img.src = url;
+  img.alt = name;
+  img.onclick = () => openLightbox(url);
+  document.getElementById("gallery").appendChild(img);
+}
 
     function openLightbox(url) {
       currentImageUrl = url;
@@ -129,4 +137,5 @@
   </script>
 </body>
 </html>
+
 
