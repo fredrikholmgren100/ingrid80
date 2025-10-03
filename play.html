@@ -130,6 +130,9 @@ const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPla
 const params = new URLSearchParams(window.location.search);
 const playerId = params.get("id");
 
+const CLOUD_NAME = "dtweoqypu";        // your Cloudinary cloud name
+const UPLOAD_PRESET = "Ingrid80";      // the unsigned preset name you created in Cloudinary
+
 // Fetch player info
 async function fetchPlayer() {
   try {
@@ -220,6 +223,7 @@ updatePhotoCount();
   </script>
 </body>
 </html>
+
 
 
 
