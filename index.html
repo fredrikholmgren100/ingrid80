@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Välkommen till Spelen</title>
+  <title>Välkommen till Spelet</title>
   <style>
     body {
       margin: 0;
@@ -15,6 +15,13 @@
       align-items: center;
       min-height: 100vh;
       padding: 20px;
+      flex-direction: column;
+    }
+    img.header-img {
+      max-width: 400px;
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 20px;
     }
     .container {
       text-align: center;
@@ -54,18 +61,24 @@
     button:hover {
       background: #5a54d6;
     }
+    .quote {
+      font-style: italic;
+      margin-top: 15px;
+      font-size: 0.9em;
+      color: #ccc;
+    }
   </style>
 </head>
 <body>
+  <img src="your-image.jpg" alt="Game Image" class="header-img" />
   <div class="container">
-    <h1>Välkommen till Spelen</h1>
+    <h1>Välkommen till Spelet</h1>
     <p>Skriv in ditt namn för att fortsätta:</p>
     <form action="play.html" method="get">
       <input type="text" name="player" placeholder="Ditt namn" required />
       <button type="submit">Gå vidare</button>
     </form>
+    <p class="quote">May the odds ever be in your favor</p>
   </div>
 </body>
-  <br>
-  <i><center>May the odds ever be in your favor.</center></i>
 </html>
