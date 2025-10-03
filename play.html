@@ -17,7 +17,7 @@
     }
     .container {
       width: 100%;
-      max-width: 500px;
+      max-width: 400px;
       text-align: center;
     }
     h1 {
@@ -30,19 +30,13 @@
       font-weight: bold;
       color: #ffd700;
     }
-    .slider {
+    .games {
       display: flex;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
+      flex-direction: column;
       gap: 16px;
-      padding: 10px 0;
-    }
-    .slider::-webkit-scrollbar {
-      display: none;
+      margin-top: 20px;
     }
     .game-card {
-      flex: 0 0 80%;
-      scroll-snap-align: center;
       background: #2a2d38;
       padding: 20px;
       border-radius: 12px;
@@ -65,6 +59,12 @@
       width: 0;
       transition: width 0.5s;
     }
+    .progress-label {
+      font-size: 0.85em;
+      margin-top: -6px;
+      margin-bottom: 8px;
+      color: #ccc;
+    }
     button {
       margin-top: 10px;
       background: #6C63FF;
@@ -86,36 +86,46 @@
     <div class="timer">Tid kvar: <span id="countdown">--:--:--</span></div>
 
     <h2>Dina Spel</h2>
-    <div class="slider" id="gameSlider">
+    <div class="games">
+	<div class="game-card">
+  <h3>📷 Gallery</h3>
+  <p>Ta en bild och ladda upp</p>
+  <input type="file" id="photoUpload" accept="image/*" capture="environment" style="margin-top:10px;">
+  <button onclick="viewGallery()">Se galleriet</button>
+</div>
       <div class="game-card">
         <h3>🎲 Bingo</h3>
         <div class="progress-bar"><div class="progress" id="bingoProgress"></div></div>
+        <div class="progress-label" id="bingoLabel">0% klart</div>
         <button onclick="openGame('bingo.html')">Spela</button>
       </div>
       <div class="game-card">
         <h3>❓ Quiz</h3>
         <div class="progress-bar"><div class="progress" id="quizProgress"></div></div>
+        <div class="progress-label" id="quizLabel">0% klart</div>
         <button onclick="openGame('quiz.html')">Spela</button>
       </div>
       <div class="game-card">
-        <h3>🧩 Puzzle</h3>
-        <div class="progress-bar"><div class="progress" id="puzzleProgress"></div></div>
-        <button onclick="openGame('puzzle.html')">Spela</button>
+        <h3>🌍 Guess the Location</h3>
+        <div class="progress-bar"><div class="progress" id="locationProgress"></div></div>
+        <div class="progress-label" id="locationLabel">0% klart</div>
+        <button onclick="openGame('location.html')">Spela</button>
       </div>
       <div class="game-card">
-        <h3>🧠 Memory</h3>
-        <div class="progress-bar"><div class="progress" id="memoryProgress"></div></div>
-        <button onclick="openGame('memory.html')">Spela</button>
+        <h3>🥚 Found the Easter Eggs</h3>
+        <div class="progress-bar"><div class="progress" id="easterProgress"></div></div>
+        <div class="progress-label" id="easterLabel">0% klart</div>
+        <button onclick="openGame('easter.html')">Spela</button>
       </div>
     </div>
   </div>
 
   <script>
-    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1"; // replace with Sheety URL
+    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1"; // replace with your Sheety URL
     const params = new URLSearchParams(window.location.search);
     const playerId = params.get("id");
 
-    // Fetch player info from Sheety
+    // Fetch player info
     async function fetchPlayer() {
       try {
         let res = await fetch(API_URL);
@@ -126,15 +136,15 @@
         if (player) {
           document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
 
-          // If player.data has JSON progress, load it
+          // Load progress if it exists
           try {
             let progress = JSON.parse(player.data || "{}");
-            setProgress("bingoProgress", progress.bingo || 0);
-            setProgress("quizProgress", progress.quiz || 0);
-            setProgress("puzzleProgress", progress.puzzle || 0);
-            setProgress("memoryProgress", progress.memory || 0);
+            setProgress("bingo", progress.bingo || 0);
+            setProgress("quiz", progress.quiz || 0);
+            setProgress("location", progress.location || 0);
+            setProgress("easter", progress.easter || 0);
           } catch (e) {
-            console.log("No progress yet");
+            console.log("No progress data yet.");
           }
         }
       } catch (err) {
@@ -163,14 +173,55 @@
     const timerInterval = setInterval(updateCountdown, 1000);
 
     // Progress bar helper
-    function setProgress(id, value) {
-      document.getElementById(id).style.width = value + "%";
+    function setProgress(key, value) {
+      document.getElementById(key + "Progress").style.width = value + "%";
+      document.getElementById(key + "Label").textContent = value + "% klart";
     }
 
     // Open game
     function openGame(url) {
       window.location.href = url + "?id=" + playerId;
     }
+    // Replace with your Cloudinary info
+const CLOUD_NAME = "dtweoqypu";        // e.g. "mycloud123"
+const UPLOAD_PRESET = "Ingrid80"; // e.g. "gallery_preset"
+
+async function uploadPhoto(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+
+  let res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+    method: "POST",
+    body: formData
+  });
+
+  let json = await res.json();
+  let imageUrl = json.secure_url;
+
+  // Save the image URL to the player’s row in Sheety
+  await fetch(`${API_URL}/${playerId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sheet1: { gallery: imageUrl }  // assumes you have a 'gallery' column
+    })
+  });
+
+  alert("Bilden har laddats upp!");
+}
+
+// Trigger upload when selecting/taking a photo
+document.getElementById("photoUpload").addEventListener("change", function() {
+  if (this.files && this.files[0]) {
+    uploadPhoto(this.files[0]);
+  }
+});
+
+function viewGallery() {
+  window.location.href = "gallery.html";
+}
+
   </script>
 </body>
 </html>
