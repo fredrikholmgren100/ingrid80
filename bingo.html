@@ -22,18 +22,23 @@
       grid-template-columns: repeat(5, 1fr);
       gap: 6px;
       width: 100%;
-      max-width: 450px;   /* prevents board from getting too wide */
+      max-width: 450px;
       margin: auto;
     }
     .cell {
       background: #2a2d38;
-      padding: 15px 5px;
       border-radius: 8px;
-      font-size: clamp(0.6em, 2.5vw, 0.9em); /* auto scales text */
+      font-size: clamp(0.6em, 2.5vw, 0.9em);
       cursor: pointer;
       user-select: none;
       transition: background 0.3s, transform 0.2s;
       word-wrap: break-word;
+      padding: 5px;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
     .cell.marked {
       background: #6C63FF;
@@ -42,15 +47,6 @@
     .cell:active {
       transform: scale(0.95);
     }
-
-    /* Ensure squares stay square */
-    .cell {
-      aspect-ratio: 1 / 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
@@ -58,6 +54,10 @@
   <div class="bingo-board" id="board"></div>
 
   <script>
+    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+    const params = new URLSearchParams(window.location.search);
+    const playerId = params.get("id");
+
     const phrases = [
       "Har pratat med Ingrid 🎂","Sett Ingrid dansa 💃","Kan en sång från 40-talet 🎵",
       "Känt Ingrid i mer än 10 år","Ätit tårta 🎂","Besökt Ingrid hemma 🏡",
@@ -69,18 +69,86 @@
       "Sagt 'Grattis' 🎉","Delat en hemlighet 🤐","Vet hennes smeknamn","Kramat någon idag 🤗"
     ];
 
-    const board = document.getElementById("board");
+    const boardElement = document.getElementById("board");
+    let boardData = [];
+    let marked = [];
 
-    // Shuffle & pick 25
-    let shuffled = phrases.sort(() => 0.5 - Math.random()).slice(0,25);
+    // Load or generate board
+    async function loadBoard() {
+      let res = await fetch(`${API_URL}/${playerId}`);
+      let data = await res.json();
+      let sheetKey = Object.keys(data)[0];
+      let player = data[sheetKey];
 
-    shuffled.forEach(text => {
-      let div = document.createElement("div");
-      div.className = "cell";
-      div.textContent = text;
-      div.onclick = () => div.classList.toggle("marked");
-      board.appendChild(div);
-    });
+      let playerData = {};
+      try {
+        playerData = JSON.parse(player.data || "{}");
+      } catch {}
+
+      if (playerData.bingoBoard) {
+        // Already has board saved
+        boardData = playerData.bingoBoard;
+        marked = playerData.bingoMarked || Array(25).fill(false);
+      } else {
+        // First time → create new board
+        boardData = phrases.sort(() => 0.5 - Math.random()).slice(0, 25);
+        marked = Array(25).fill(false);
+
+        playerData.bingoBoard = boardData;
+        playerData.bingoMarked = marked;
+
+        await fetch(`${API_URL}/${playerId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            blad1: { data: JSON.stringify(playerData) }
+          })
+        });
+      }
+
+      renderBoard();
+    }
+
+    // Render the board
+    function renderBoard() {
+      boardElement.innerHTML = "";
+      boardData.forEach((text, i) => {
+        let div = document.createElement("div");
+        div.className = "cell" + (marked[i] ? " marked" : "");
+        div.textContent = text;
+        div.onclick = () => toggleCell(i);
+        boardElement.appendChild(div);
+      });
+    }
+
+    // Toggle a cell
+    async function toggleCell(index) {
+      marked[index] = !marked[index];
+      renderBoard();
+
+      let res = await fetch(`${API_URL}/${playerId}`);
+      let data = await res.json();
+      let sheetKey = Object.keys(data)[0];
+      let player = data[sheetKey];
+
+      let playerData = {};
+      try {
+        playerData = JSON.parse(player.data || "{}");
+      } catch {}
+
+      playerData.bingoBoard = boardData;
+      playerData.bingoMarked = marked;
+
+      await fetch(`${API_URL}/${playerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blad1: { data: JSON.stringify(playerData) }
+        })
+      });
+    }
+
+    loadBoard();
   </script>
 </body>
 </html>
