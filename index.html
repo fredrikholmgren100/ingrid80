@@ -1,45 +1,41 @@
 <!doctype html>
 <html lang="sv">
 <head>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1d1f27">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Välkommen till Spelet</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1d1f27">
+
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #1d1f27;
-      color: #fff;
+      height: 100vh;
+      background: url("letsboat.png") no-repeat center center fixed;
+      background-size: cover;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      padding: 10px;
-      flex-direction: column;
+      color: #fff;
     }
-    img.header-img {
-      width: 100%;
-      max-width: 320px;
-      height: auto;
-      border-radius: 12px;
-      margin-bottom: 15px;
-    }
+
     .container {
       text-align: center;
-      background: #2a2d38;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-      width: 100%;
+      background: rgba(42, 45, 56, 0.5);
+      backdrop-filter: blur(10px);
+      padding: 25px 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      width: 90%;
       max-width: 320px;
-      box-sizing: border-box;
     }
+
     h1 {
       margin-bottom: 15px;
       font-size: 1.4em;
     }
+
     input[type="text"] {
       width: 100%;
       padding: 12px;
@@ -47,199 +43,122 @@
       border-radius: 6px;
       font-size: 16px;
       margin-bottom: 12px;
-      box-sizing: border-box;
       text-align: center;
+      outline: none;
+      background: rgba(255,255,255,0.1);
+      color: white;
     }
-    .pin-dots {
+
+    .pin-inputs {
       display: flex;
       justify-content: center;
       gap: 10px;
       margin: 15px 0;
     }
-    .dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 2px solid #6C63FF;
-      background: transparent;
-      transition: background 0.2s;
-    }
-    .dot.filled {
-      background: #6C63FF;
-    }
-    .keypad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      justify-items: center;
-      margin-top: 10px;
-    }
-    .keypad button {
-      width: 70px;
-      height: 60px;
-      font-size: 1.2em;
-      border: none;
+
+    .pin-box {
+      width: 50px;
+      height: 55px;
+      font-size: 1.5em;
+      text-align: center;
       border-radius: 10px;
-      background: #3a3d47;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.2s;
+      border: none;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      backdrop-filter: blur(6px);
     }
-    .keypad button:hover {
-      background: #6C63FF;
-    }
-    .keypad button:active {
-      background: #514ccf;
-    }
+
     .quote {
       font-style: italic;
       margin-top: 12px;
       font-size: 0.85em;
-      color: #ccc;
+      color: #ddd;
     }
+
     footer {
-      margin-top: 20px;
+      position: absolute;
+      bottom: 10px;
       font-size: 0.75em;
-      color: #999;
+      color: #ccc;
       text-align: center;
+      width: 100%;
     }
   </style>
 </head>
 <body>
-  <img src="logo.png" alt="Ingrid Nolander 80 Logo" class="header-img" />
+
   <div class="container">
     <h1>Välkommen till Ingrids födelsedagsspel!</h1>
-
-    <input type="text" id="name" placeholder="Ditt förnamn" required />
-
-    <div class="pin-dots">
-      <div class="dot" id="dot1"></div>
-      <div class="dot" id="dot2"></div>
-      <div class="dot" id="dot3"></div>
-      <div class="dot" id="dot4"></div>
-    </div>
-
-    <div class="keypad">
-      <button type="button" onclick="pressNum(1)">1</button>
-      <button type="button" onclick="pressNum(2)">2</button>
-      <button type="button" onclick="pressNum(3)">3</button>
-      <button type="button" onclick="pressNum(4)">4</button>
-      <button type="button" onclick="pressNum(5)">5</button>
-      <button type="button" onclick="pressNum(6)">6</button>
-      <button type="button" onclick="pressNum(7)">7</button>
-      <button type="button" onclick="pressNum(8)">8</button>
-      <button type="button" onclick="pressNum(9)">9</button>
-      <div></div>
-      <button type="button" onclick="pressNum(0)">0</button>
-      <button type="button" onclick="deleteNum()">⌫</button>
-    </div>
-
-    <p class="quote">May the odds ever be in your favor</p>
+    <form id="loginForm">
+      <input type="text" id="name" placeholder="Ditt förnamn" required />
+      <div class="pin-inputs">
+        <input type="password" maxlength="1" class="pin-box" id="pin1" inputmode="numeric">
+        <input type="password" maxlength="1" class="pin-box" id="pin2" inputmode="numeric">
+        <input type="password" maxlength="1" class="pin-box" id="pin3" inputmode="numeric">
+        <input type="password" maxlength="1" class="pin-box" id="pin4" inputmode="numeric">
+      </div>
+    </form>
+    <p class="quote">The person on the boat comes from the site "This-Person-Don't-Exist.com</p>
   </div>
 
   <footer>
-    Sponsored by The German Autobahn.
+    Sponsored by The German Autobahn
   </footer>
 
   <script>
-const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
-let pinInput = "";
+  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
 
-// --- prevent caching so back button reloads page ---
-window.addEventListener("pageshow", (event) => {
-  if (event.persisted) {
-    window.location.reload(); // force full reload if loaded from cache
-  }
-});
+  const pinBoxes = document.querySelectorAll(".pin-box");
+  pinBoxes.forEach((box, idx) => {
+    box.addEventListener("input", () => {
+      if (box.value && idx < pinBoxes.length - 1) pinBoxes[idx + 1].focus();
+      if (idx === pinBoxes.length - 1 && box.value) checkLogin();
+    });
+  });
 
-// --- always reset login session when opening index ---
-sessionStorage.removeItem("loggedIn");
+  async function checkLogin() {
+    const name = document.getElementById("name").value.trim();
+    const pin = Array.from(pinBoxes).map(b => b.value).join("");
+    if (!name || pin.length < 4) return;
 
-function pressNum(num) {
-  if (pinInput.length < 4) {
-    pinInput += num;
-    updateDots();
-    if (pinInput.length === 4) setTimeout(handleLogin, 150);
-  }
-}
-
-function deleteNum() {
-  pinInput = pinInput.slice(0, -1);
-  updateDots();
-}
-
-function updateDots() {
-  for (let i = 1; i <= 4; i++) {
-    const dot = document.getElementById("dot" + i);
-    dot.classList.toggle("filled", i <= pinInput.length);
-  }
-}
-
-async function handleLogin() {
-  const name = document.getElementById("name").value.trim();
-  if (!name) {
-    alert("Ange ditt namn först.");
-    pinInput = "";
-    updateDots();
-    return;
-  }
-
-  try {
     let res = await fetch(API_URL);
     let data = await res.json();
     let sheetKey = Object.keys(data)[0];
     let players = data[sheetKey];
-
-    let player = players.find(p => p.name?.toLowerCase() === name.toLowerCase());
+    let player = players.find(p => p.name.toLowerCase() === name.toLowerCase());
 
     if (player) {
-      if (player.pin === pinInput) {
-        // ✅ Save login session
+      if (player.pin === pin) {
         sessionStorage.setItem("loggedIn", "true");
         window.location.href = "play.html?id=" + player.id;
       } else {
-        alert("Fel PIN-kod. Försök igen.");
-        pinInput = "";
-        updateDots();
+        alert("Fel pinkod. Försök igen.");
+        pinBoxes.forEach(b => b.value = "");
+        pinBoxes[0].focus();
       }
     } else {
-      if (confirm(`Kontot "${name}" finns inte. Vill du skapa ett nytt konto?`)) {
-        let newPlayer = {
-          blad1: { name: name, pin: pinInput, data: "{}", gallery: "" }
-        };
-        let createRes = await fetch(API_URL, {
+      if (confirm("Användaren finns inte. Vill du skapa ett nytt konto?")) {
+        const newPlayer = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newPlayer)
+          body: JSON.stringify({
+            blad1: { name, pin, data: "{}", gallery: "" }
+          })
         });
-        if (createRes.ok) {
-          let created = await createRes.json();
-          let newId = created.blad1.id;
-          alert("Kontot skapades!");
-          sessionStorage.setItem("loggedIn", "true");
-          window.location.href = "play.html?id=" + newId;
-        } else {
-          alert("Ett fel uppstod vid skapandet av kontot.");
-        }
+        const newData = await newPlayer.json();
+        sessionStorage.setItem("loggedIn", "true");
+        window.location.href = "play.html?id=" + newData.blad1.id;
+      } else {
+        pinBoxes.forEach(b => b.value = "");
+        pinBoxes[0].focus();
       }
-      pinInput = "";
-      updateDots();
     }
-  } catch (err) {
-    console.error(err);
-    alert("Kunde inte ansluta till servern.");
-    pinInput = "";
-    updateDots();
   }
-}
 
-// --- Service Worker ---
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
-    .then(() => console.log("Service Worker registered"));
-}
-</script>
-
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(() => console.log("Service Worker registered"));
+  }
+  </script>
 </body>
 </html>
-
