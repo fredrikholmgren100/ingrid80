@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1d1f27">
+  <meta name="theme-color" content="#1d1f27">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Välkommen till Spelet</title>
@@ -40,11 +40,7 @@
       margin-bottom: 15px;
       font-size: 1.4em;
     }
-    p {
-      margin-bottom: 12px;
-      font-size: 0.95em;
-    }
-    input[type="text"], button {
+    input[type="text"] {
       width: 100%;
       padding: 12px;
       border: none;
@@ -52,15 +48,48 @@
       font-size: 16px;
       margin-bottom: 12px;
       box-sizing: border-box;
+      text-align: center;
     }
-    button {
+    .pin-dots {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #6C63FF;
+      background: transparent;
+      transition: background 0.2s;
+    }
+    .dot.filled {
       background: #6C63FF;
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
     }
-    button:hover {
-      background: #5a54d6;
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      justify-items: center;
+      margin-top: 10px;
+    }
+    .keypad button {
+      width: 70px;
+      height: 60px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 10px;
+      background: #3a3d47;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .keypad button:hover {
+      background: #6C63FF;
+    }
+    .keypad button:active {
+      background: #514ccf;
     }
     .quote {
       font-style: italic;
@@ -74,57 +103,134 @@
       color: #999;
       text-align: center;
     }
-    .color-options {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-bottom: 15px;
-    }
-    .color-options label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255,255,255,0.05);
-      padding: 8px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
   <img src="logo.png" alt="Ingrid Nolander 80 Logo" class="header-img" />
   <div class="container">
-    <h1>Välkommen till Ingrids födelsedags spel!</h1>
-    <form id="loginForm">
-      <input type="text" id="name" placeholder="Ditt förnamn" required />
-      <p>Välj din färg som lösenord:</p>
-      <div class="color-options">
-        <label><input type="radio" name="color" value="red" required> 🔴 Röd</label>
-        <label><input type="radio" name="color" value="blue"> 🔵 Blå</label>
-        <label><input type="radio" name="color" value="green"> 🟢 Grön</label>
-        <label><input type="radio" name="color" value="yellow"> 🟡 Gul</label>
-        <label><input type="radio" name="color" value="purple"> 🟣 Lila</label>
-        <label><input type="radio" name="color" value="orange"> 🟠 Orange</label>
-      </div>
-      <button type="submit">Gå vidare</button>
-    </form>
+    <h1>Välkommen till Ingrids födelsedagsspel!</h1>
+
+    <input type="text" id="name" placeholder="Ditt förnamn" required />
+
+    <div class="pin-dots">
+      <div class="dot" id="dot1"></div>
+      <div class="dot" id="dot2"></div>
+      <div class="dot" id="dot3"></div>
+      <div class="dot" id="dot4"></div>
+    </div>
+
+    <div class="keypad">
+      <button type="button" onclick="pressNum(1)">1</button>
+      <button type="button" onclick="pressNum(2)">2</button>
+      <button type="button" onclick="pressNum(3)">3</button>
+      <button type="button" onclick="pressNum(4)">4</button>
+      <button type="button" onclick="pressNum(5)">5</button>
+      <button type="button" onclick="pressNum(6)">6</button>
+      <button type="button" onclick="pressNum(7)">7</button>
+      <button type="button" onclick="pressNum(8)">8</button>
+      <button type="button" onclick="pressNum(9)">9</button>
+      <div></div>
+      <button type="button" onclick="pressNum(0)">0</button>
+      <button type="button" onclick="deleteNum()">⌫</button>
+    </div>
+
     <p class="quote">May the odds ever be in your favor</p>
   </div>
+
   <footer>
-    Sponsored by The German Autobahn. 
+    Sponsored by The German Autobahn.
   </footer>
 
-  <!-- External script file -->
-  <script src="script.js"></script>
-
   <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
-    .then(() => console.log("Service Worker registered"));
-}
-</script>
+  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+  let pinInput = "";
+
+  function pressNum(num) {
+    if (pinInput.length < 4) {
+      pinInput += num;
+      updateDots();
+
+      if (pinInput.length === 4) {
+        // Auto-proceed when full PIN entered
+        setTimeout(handleLogin, 150);
+      }
+    }
+  }
+
+  function deleteNum() {
+    pinInput = pinInput.slice(0, -1);
+    updateDots();
+  }
+
+  function updateDots() {
+    for (let i = 1; i <= 4; i++) {
+      const dot = document.getElementById("dot" + i);
+      dot.classList.toggle("filled", i <= pinInput.length);
+    }
+  }
+
+  async function handleLogin() {
+    const name = document.getElementById("name").value.trim();
+    if (!name) {
+      alert("Ange ditt namn först.");
+      pinInput = "";
+      updateDots();
+      return;
+    }
+
+    try {
+      let res = await fetch(API_URL);
+      let data = await res.json();
+      let sheetKey = Object.keys(data)[0];
+      let players = data[sheetKey];
+
+      let player = players.find(p => p.name?.toLowerCase() === name.toLowerCase());
+
+      if (player) {
+        // Player exists
+        if (player.pin === pinInput) {
+          window.location.href = "play.html?id=" + player.id;
+        } else {
+          alert("Fel PIN-kod. Försök igen.");
+          pinInput = "";
+          updateDots();
+        }
+      } else {
+        // Ask to create new
+        if (confirm(`Kontot "${name}" finns inte. Vill du skapa ett nytt konto?`)) {
+          let newPlayer = {
+            blad1: { name: name, pin: pinInput, data: "{}", gallery: "" }
+          };
+          let createRes = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newPlayer)
+          });
+          if (createRes.ok) {
+            let created = await createRes.json();
+            let newId = created.blad1.id;
+            alert("Kontot skapades!");
+            window.location.href = "play.html?id=" + newId;
+          } else {
+            alert("Ett fel uppstod vid skapandet av kontot.");
+          }
+        }
+        pinInput = "";
+        updateDots();
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Kunde inte ansluta till servern.");
+      pinInput = "";
+      updateDots();
+    }
+  }
+
+  // Service Worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(() => console.log("Service Worker registered"));
+  }
+  </script>
 </body>
 </html>
-
-
-
