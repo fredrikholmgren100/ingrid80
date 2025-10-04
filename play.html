@@ -7,43 +7,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Din Speldashboard</title>
   <style>
+    :root {
+      --bg-zoom: 250%;     /* Zoom level (e.g. 120% to zoom in) */
+      --bg-pos-x: 50%;     /* Horizontal position (0% = left, 100% = right) */
+      --bg-pos-y: 50%;     /* Vertical position (0% = top, 100% = bottom) */
+    }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #1d1f27;
       color: #fff;
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
       padding: 20px;
+      position: relative;
+      overflow-x: hidden;
     }
+
+    /* 🔹 Background image setup */
+    .background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url("letsboat-bg.png") center center no-repeat;
+      background-size: var(--bg-zoom);
+      background-position: var(--bg-pos-x) var(--bg-pos-y);
+      transition: background-size 0.3s ease, background-position 0.3s ease;
+      z-index: -2;
+    }
+
+    /* Overlay for readability */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
     .container {
       width: 100%;
       max-width: 400px;
       text-align: center;
-      margin-top: 60px; /* space for buttons */
+      margin-top: 60px;
+      backdrop-filter: blur(0px);
+      padding: 20px;
     }
+
     h1 {
       font-size: 1.8em;
       margin-bottom: 10px;
     }
+
     .timer {
       font-size: 1.2em;
       margin: 15px 0;
       font-weight: bold;
       color: #ffd700;
     }
+
     .game-card {
-      background: #2a2d38;
+      background: rgba(42,45,56,0.65);
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
       text-align: center;
       margin-top: 20px;
+      backdrop-filter: blur(6px);
     }
+
     button {
       margin-top: 10px;
-      background: #6C63FF;
+      background: #0066cc;
       color: #fff;
       border: none;
       padding: 10px 16px;
@@ -51,8 +91,9 @@
       font-weight: bold;
       cursor: pointer;
     }
+
     button:hover {
-      background: #5a54d6;
+      background: #0066cc;
     }
 
     .welcome-wrapper {
@@ -62,10 +103,12 @@
       gap: 12px;
       margin-bottom: 10px;
     }
+
     .welcome-wrapper h1 {
       margin: 0;
       font-size: 1.8em;
     }
+
     .welcome-img {
       width: 60px;
       height: 60px;
@@ -89,7 +132,7 @@
       position: fixed;
       top: 15px;
       right: 15px;
-      background: #6C63FF;
+      background: #0066cc;
       color: #fff;
       border: none;
       padding: 8px 12px;
@@ -111,13 +154,14 @@
       left: -240px;
       width: 220px;
       height: 100%;
-      background: #2a2d38;
-      padding-top: 60px;
+      background: rgba(42,45,56,0.95);
+      padding-top: 120px;
       transition: left 0.3s;
       z-index: 1000;
       display: flex;
       flex-direction: column;
     }
+
     .side-menu a {
       padding: 15px 20px;
       text-decoration: none;
@@ -126,9 +170,11 @@
       border-bottom: 1px solid #444;
       text-align: left;
     }
+
     .side-menu a:hover {
       background: #6C63FF;
     }
+
     .side-menu.open {
       left: 0;
     }
@@ -138,11 +184,14 @@
       height: auto;
       margin-top: 12px;
     }
+
     .sponsor-footer {
       margin-top: 40px;
       padding: 15px;
       text-align: center;
       border-top: 1px solid #444;
+      background: rgba(0,0,0,0.4);
+      border-radius: 10px;
     }
 
     .sponsor-logos {
@@ -159,8 +208,11 @@
   </style>
 </head>
 <body>
+  <!-- Background layers -->
+  <div class="background"></div>
+  <div class="overlay"></div>
 
-  <!-- Hamburger and Back buttons -->
+  <!-- Buttons -->
   <button class="menu-btn" onclick="toggleMenu()">☰</button>
   <button class="back-btn" onclick="goBack()">⟵</button>
 
@@ -214,30 +266,39 @@
 
   <script>
   // --- LOGIN PROTECTION ---
-  if (!sessionStorage.getItem("loggedIn")) {
-    window.location.replace("index.html");
-  }
-  window.addEventListener("beforeunload", () => {
-    sessionStorage.removeItem("loggedIn");
-  });
+  if (!sessionStorage.getItem("loggedIn")) window.location.replace("index.html");
+  window.addEventListener("beforeunload", () => sessionStorage.removeItem("loggedIn"));
 
   // --- Sheety + Cloudinary setup ---
   const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
   const params = new URLSearchParams(window.location.search);
   const playerId = params.get("id");
-  const CLOUD_NAME = "dtweoqypu";        
-  const UPLOAD_PRESET = "Ingrid80";      
+  const CLOUD_NAME = "dtweoqypu";
+  const UPLOAD_PRESET = "Ingrid80";
 
-  // --- Side menu toggle ---
+  // --- Background adjust controls (optional for testing) ---
+  document.addEventListener("keydown", (e) => {
+    const root = document.documentElement;
+    let zoom = parseInt(getComputedStyle(root).getPropertyValue("--bg-zoom")) || 100;
+    let x = parseInt(getComputedStyle(root).getPropertyValue("--bg-pos-x")) || 50;
+
+    if (e.key === "+" || e.key === "=") zoom += 5;
+    if (e.key === "-" || e.key === "_") zoom -= 5;
+    if (e.key === "ArrowRight") x += 2;
+    if (e.key === "ArrowLeft") x -= 2;
+
+    zoom = Math.min(Math.max(50, zoom), 200);
+    x = Math.min(Math.max(0, x), 100);
+
+    root.style.setProperty("--bg-zoom", zoom + "%");
+    root.style.setProperty("--bg-pos-x", x + "%");
+  });
+
   function toggleMenu() {
     document.getElementById("sideMenu").classList.toggle("open");
   }
 
-  // --- Back button ---
   function goBack() {
-    const params = new URLSearchParams(window.location.search);
-    const playerId = params.get("id");
-
     if (document.referrer && document.referrer.includes("play.html")) {
       window.location.href = "play.html?id=" + playerId;
     } else if (window.history.length > 1) {
@@ -247,23 +308,16 @@
     }
   }
 
-  // --- Fetch player info ---
   async function fetchPlayer() {
     try {
       let res = await fetch(API_URL);
       let data = await res.json();
       let sheetKey = Object.keys(data)[0];
       let player = data[sheetKey].find(r => r.id == playerId);
-
-      if (player) {
-        document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
-      }
-    } catch (err) {
-      console.error("Error fetching player:", err);
-    }
+      if (player) document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
+    } catch (err) { console.error("Error fetching player:", err); }
   }
 
-  // --- Count uploaded photos ---
   async function updatePhotoCount() {
     try {
       let res = await fetch(API_URL);
@@ -271,88 +325,58 @@
       let sheetKey = Object.keys(data)[0];
       let rows = data[sheetKey];
       let totalImages = 0;
-
       rows.forEach(r => {
         if (r.gallery) {
-          try {
-            let arr = JSON.parse(r.gallery);
-            totalImages += arr.length;
-          } catch (e) {
-            totalImages += 1;
-          }
+          try { let arr = JSON.parse(r.gallery); totalImages += arr.length; }
+          catch (e) { totalImages += 1; }
         }
       });
       document.getElementById("photoCount").textContent = totalImages;
-    } catch (err) {
-      console.error("Error counting photos:", err);
-    }
+    } catch (err) { console.error("Error counting photos:", err); }
   }
 
-  // --- Upload photo to Cloudinary ---
   async function uploadPhoto(file) {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
-
     let res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-      method: "POST",
-      body: formData
+      method: "POST", body: formData
     });
-
     let json = await res.json();
     let imageUrl = json.secure_url;
-
     let res2 = await fetch(`${API_URL}/${playerId}`);
     let data = await res2.json();
     let sheetKey = Object.keys(data)[0];
     let player = data[sheetKey];
     let gallery = [];
-
-    try {
-      gallery = JSON.parse(player.gallery || "[]");
-    } catch (e) {
-      gallery = [];
-    }
-
+    try { gallery = JSON.parse(player.gallery || "[]"); } catch (e) { gallery = []; }
     gallery.push(imageUrl);
-
     await fetch(`${API_URL}/${playerId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        blad1: { gallery: JSON.stringify(gallery) }
-      })
+      body: JSON.stringify({ blad1: { gallery: JSON.stringify(gallery) } })
     });
-
     alert("Bilden har laddats upp!");
     updatePhotoCount();
   }
 
   document.getElementById("photoUpload").addEventListener("change", function() {
-    if (this.files && this.files[0]) {
-      uploadPhoto(this.files[0]);
-    }
+    if (this.files && this.files[0]) uploadPhoto(this.files[0]);
   });
 
-  // --- Navigation ---
-  function viewGallery() {
-    window.location.href = "gallery.html?id=" + playerId;
-  }
-
+  function viewGallery() { window.location.href = "gallery.html?id=" + playerId; }
   window.openGame = function (url) {
     toggleMenu();
     window.location.href = url + "?id=" + encodeURIComponent(playerId);
   };
 
-  // --- Countdown Timer ---
   const reviewDate = new Date("2025-10-10T18:00:00").getTime();
   function updateCountdown() {
     const now = new Date().getTime();
     const diff = reviewDate - now;
     if (diff <= 0) {
       document.getElementById("countdown").textContent = "Tiden är slut!";
-      clearInterval(timerInterval);
-      return;
+      clearInterval(timerInterval); return;
     }
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -360,15 +384,12 @@
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
     let text = "";
     if (days > 0) text += days + "d ";
-    text += (hours < 10 ? "0" + hours : hours) + ":"
-          + (minutes < 10 ? "0" + minutes : minutes) + ":"
-          + (seconds < 10 ? "0" + seconds : seconds);
+    text += (hours<10?"0"+hours:hours)+":"+(minutes<10?"0"+minutes:minutes)+":"+(seconds<10?"0"+seconds:seconds);
     document.getElementById("countdown").textContent = text;
   }
   const timerInterval = setInterval(updateCountdown, 1000);
   updateCountdown();
 
-  // --- Init ---
   fetchPlayer();
   updatePhotoCount();
   </script>
