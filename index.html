@@ -142,95 +142,104 @@
   </footer>
 
   <script>
-  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
-  let pinInput = "";
+const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+let pinInput = "";
 
-  function pressNum(num) {
-    if (pinInput.length < 4) {
-      pinInput += num;
-      updateDots();
-
-      if (pinInput.length === 4) {
-        // Auto-proceed when full PIN entered
-        setTimeout(handleLogin, 150);
-      }
-    }
+// --- prevent caching so back button reloads page ---
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    window.location.reload(); // force full reload if loaded from cache
   }
+});
 
-  function deleteNum() {
-    pinInput = pinInput.slice(0, -1);
+// --- always reset login session when opening index ---
+sessionStorage.removeItem("loggedIn");
+
+function pressNum(num) {
+  if (pinInput.length < 4) {
+    pinInput += num;
     updateDots();
+    if (pinInput.length === 4) setTimeout(handleLogin, 150);
+  }
+}
+
+function deleteNum() {
+  pinInput = pinInput.slice(0, -1);
+  updateDots();
+}
+
+function updateDots() {
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById("dot" + i);
+    dot.classList.toggle("filled", i <= pinInput.length);
+  }
+}
+
+async function handleLogin() {
+  const name = document.getElementById("name").value.trim();
+  if (!name) {
+    alert("Ange ditt namn först.");
+    pinInput = "";
+    updateDots();
+    return;
   }
 
-  function updateDots() {
-    for (let i = 1; i <= 4; i++) {
-      const dot = document.getElementById("dot" + i);
-      dot.classList.toggle("filled", i <= pinInput.length);
-    }
-  }
+  try {
+    let res = await fetch(API_URL);
+    let data = await res.json();
+    let sheetKey = Object.keys(data)[0];
+    let players = data[sheetKey];
 
-  async function handleLogin() {
-    const name = document.getElementById("name").value.trim();
-    if (!name) {
-      alert("Ange ditt namn först.");
-      pinInput = "";
-      updateDots();
-      return;
-    }
+    let player = players.find(p => p.name?.toLowerCase() === name.toLowerCase());
 
-    try {
-      let res = await fetch(API_URL);
-      let data = await res.json();
-      let sheetKey = Object.keys(data)[0];
-      let players = data[sheetKey];
-
-      let player = players.find(p => p.name?.toLowerCase() === name.toLowerCase());
-
-      if (player) {
-        // Player exists
-        if (player.pin === pinInput) {
-          window.location.href = "play.html?id=" + player.id;
-        } else {
-          alert("Fel PIN-kod. Försök igen.");
-          pinInput = "";
-          updateDots();
-        }
+    if (player) {
+      if (player.pin === pinInput) {
+        // ✅ Save login session
+        sessionStorage.setItem("loggedIn", "true");
+        window.location.href = "play.html?id=" + player.id;
       } else {
-        // Ask to create new
-        if (confirm(`Kontot "${name}" finns inte. Vill du skapa ett nytt konto?`)) {
-          let newPlayer = {
-            blad1: { name: name, pin: pinInput, data: "{}", gallery: "" }
-          };
-          let createRes = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newPlayer)
-          });
-          if (createRes.ok) {
-            let created = await createRes.json();
-            let newId = created.blad1.id;
-            alert("Kontot skapades!");
-            window.location.href = "play.html?id=" + newId;
-          } else {
-            alert("Ett fel uppstod vid skapandet av kontot.");
-          }
-        }
+        alert("Fel PIN-kod. Försök igen.");
         pinInput = "";
         updateDots();
       }
-    } catch (err) {
-      console.error(err);
-      alert("Kunde inte ansluta till servern.");
+    } else {
+      if (confirm(`Kontot "${name}" finns inte. Vill du skapa ett nytt konto?`)) {
+        let newPlayer = {
+          blad1: { name: name, pin: pinInput, data: "{}", gallery: "" }
+        };
+        let createRes = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newPlayer)
+        });
+        if (createRes.ok) {
+          let created = await createRes.json();
+          let newId = created.blad1.id;
+          alert("Kontot skapades!");
+          sessionStorage.setItem("loggedIn", "true");
+          window.location.href = "play.html?id=" + newId;
+        } else {
+          alert("Ett fel uppstod vid skapandet av kontot.");
+        }
+      }
       pinInput = "";
       updateDots();
     }
+  } catch (err) {
+    console.error(err);
+    alert("Kunde inte ansluta till servern.");
+    pinInput = "";
+    updateDots();
   }
+}
 
-  // Service Worker
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js")
-      .then(() => console.log("Service Worker registered"));
-  }
-  </script>
+// --- Service Worker ---
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker registered"));
+}
+</script>
+
 </body>
 </html>
+
