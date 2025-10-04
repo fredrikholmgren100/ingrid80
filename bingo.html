@@ -47,9 +47,30 @@
     .cell:active {
       transform: scale(0.95);
     }
+    .back-btn {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  background: #6C63FF;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: background 0.2s;
+}
+
+.back-btn:hover {
+  background: #5a54d6;
+}
   </style>
 </head>
 <body>
+  <button class="back-btn" onclick="goBack()">⟵ Tillbaka</button>
   <h1>🎲 Ingrid 80 Bingo</h1>
   <div class="bingo-board" id="board"></div>
 
@@ -149,6 +170,15 @@
     }
 
     loadBoard();
+    function goBack() {
+  // If there’s history, go back; otherwise, go to index.html
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = "index.html";
+  }
+}
   </script>
 </body>
 </html>
+
