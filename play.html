@@ -215,12 +215,13 @@
   <button class="back-btn" onclick="goBack()">⟵</button>
 
   <!-- Side menu -->
-  <div id="sideMenu" class="side-menu">
-    <a href="#" onclick="openGame('bingo.html')">🎲 Bingo</a>
-    <a href="#" onclick="openGame('quiz.html')">❓ Quiz</a>
-    <a href="#" onclick="openGame('location.html')">🌍 Guess the Location</a>
-    <a href="#" onclick="openGame('easter.html')">🥚 Found the Easter Eggs</a>
-  </div>
+<div id="sideMenu" class="side-menu">
+  <a href="#" onclick="openGame('bingo.html')">🎲 Bingo</a>
+  <a href="#" onclick="openGame('quiz.html')">❓ Quiz</a>
+  <a href="#" onclick="openGame('location.html')">🌍 Guess the Location</a>
+  <a href="#" onclick="openGame('easter.html')">🥚 Found the Easter Eggs</a>
+  <a href="#" id="winnersLink" style="display:none;" onclick="openGame('winners.html')">🏆 Se Vinnarna</a>
+</div>
 
   <div class="container">
     <div class="welcome-wrapper">
@@ -288,15 +289,26 @@
     }
   }
 
-  async function fetchPlayer() {
-    try {
-      let res = await fetch(API_URL);
-      let data = await res.json();
-      let sheetKey = Object.keys(data)[0];
-      let player = data[sheetKey].find(r => r.id == playerId);
-      if (player) document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
-    } catch (err) { console.error("Error fetching player:", err); }
+async function fetchPlayer() {
+  try {
+    let res = await fetch(API_URL);
+    let data = await res.json();
+    let sheetKey = Object.keys(data)[0];
+    let player = data[sheetKey].find(r => r.id == playerId);
+
+    if (player) {
+      document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
+
+      // 🔸 Show winner page only for Dev
+      if (player.name.toLowerCase() === "dev") {
+        document.getElementById("winnersLink").style.display = "block";
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching player:", err);
   }
+}
+
 
   async function updatePhotoCount() {
     try {
@@ -376,3 +388,4 @@
   </script>
 </body>
 </html>
+
