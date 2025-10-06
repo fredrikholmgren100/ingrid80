@@ -4,167 +4,131 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Välkommen till Spelet</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1d1f27">
 
-<style>
-  :root {
-    --container-position: 75%; /* move box up/down (0% = top, 100% = bottom) */
-    --bg-zoom: 145%;           /* default zoom for most screens */
-    --bg-pos-x: 25%;
-    --bg-pos-y: 50%;
-  }
-
-  /* 🔹 Responsiveness adjustments */
-  @media (max-aspect-ratio: 9/16) {
+  <style>
     :root {
-      --bg-zoom: 160%;
-      --bg-pos-x: 35%;
-      --bg-pos-y: 50%;
+      --container-position: 75%;  /* move login box vertically */
+      --bg-pos-x: 25%;            /* background horizontal offset */
+      --bg-pos-y: 46%;            /* background vertical offset */
+      --bg-zoom-x: auto;          /* width */
+      --bg-zoom-y: 100%;          /* height zoom */
     }
-  }
 
-  @media (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3) {
-    :root {
-      --bg-zoom: 130%;
-      --bg-pos-x: 50%;
-      --bg-pos-y: 55%;
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      width: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background-color: #000;
+      position: relative;
     }
-  }
 
-  @media (min-aspect-ratio: 16/9) {
-    :root {
-      --bg-zoom: 120%;
-      --bg-pos-x: 45%;
-      --bg-pos-y: 50%;
+    /* 🔹 Fullscreen background */
+    .background {
+      position: fixed;
+      inset: 0;
+      background: url("letsboat3.png") no-repeat center center;
+      background-position: var(--bg-pos-x) var(--bg-pos-y);
+      background-size: var(--bg-zoom-x) var(--bg-zoom-y);
+      background-attachment: scroll;
+      transition: background-size 0.3s ease, background-position 0.3s ease;
+      z-index: -1;
     }
-  }
 
-  /* ✅ Make the page scrollable and background responsive */
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    min-height: 100vh;      /* instead of fixed height */
-    width: 100%;
-    overflow-y: auto;       /* allow scroll on small screens */
-    overflow-x: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #000;
-  }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.15);
+      z-index: 0;
+    }
 
-  /* 🔹 Fullscreen scalable background */
-  .background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url("letsboat3.png") center center no-repeat;
-    background-size: var(--bg-zoom, cover);
-    background-position: var(--bg-pos-x, 50%) var(--bg-pos-y, 50%);
-    background-repeat: no-repeat;
-    background-attachment: scroll;
-    transition: background-size 0.3s ease, background-position 0.3s ease;
-    z-index: -1;
-  }
+    /* 🔹 Login box */
+    .container {
+      position: absolute;
+      top: var(--container-position);
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      background: rgba(42, 45, 56, 0.45);
+      backdrop-filter: blur(5px);
+      padding: 25px 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      width: 90%;
+      max-width: 320px;
+      color: white;
+      z-index: 2;
+    }
 
-  /* Overlay for visual contrast */
-  .overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.15);
-    z-index: 0;
-  }
+    h1 {
+      margin-bottom: 15px;
+      font-size: 1.4em;
+    }
 
-  /* Login container */
-  .container {
-    position: relative;
-    top: var(--container-position);
-    transform: translateY(-50%);
-    text-align: center;
-    background: rgba(42, 45, 56, 0.45);
-    backdrop-filter: blur(5px);
-    padding: 25px 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    width: 90%;
-    max-width: 320px;
-    color: white;
-    z-index: 2;
-  }
+    input[type="text"] {
+      width: 80%;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      margin-bottom: 12px;
+      text-align: center;
+      outline: none;
+      background: rgba(255,255,255,0.15);
+      color: white;
+    }
 
-  h1 {
-    margin-bottom: 15px;
-    font-size: 1.4em;
-  }
+    input::placeholder {
+      color: #fff;
+      opacity: 0.9;
+    }
 
-  input[type="text"] {
-    width: 80%;
-    padding: 12px;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    margin-bottom: 12px;
-    text-align: center;
-    outline: none;
-    background: rgba(255,255,255,0.15);
-    color: white;
-  }
+    .pin-inputs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 15px 0;
+    }
 
-  input::placeholder {
-    color: #fff;
-    opacity: 0.9;
-  }
+    .pin-box {
+      width: 50px;
+      height: 55px;
+      font-size: 1.5em;
+      text-align: center;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      backdrop-filter: blur(6px);
+    }
 
-  .pin-inputs {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin: 15px 0;
-  }
+    .quote {
+      font-style: italic;
+      margin-top: 12px;
+      font-size: 0.85em;
+      color: #ddd;
+    }
 
-  .pin-box {
-    width: 50px;
-    height: 55px;
-    font-size: 1.5em;
-    text-align: center;
-    border-radius: 10px;
-    border: none;
-    background: rgba(255,255,255,0.15);
-    color: white;
-    backdrop-filter: blur(6px);
-  }
-
-  .quote {
-    font-style: italic;
-    margin-top: 12px;
-    font-size: 0.85em;
-    color: #ddd;
-  }
-
-  footer {
-    margin-top: 30px;
-    font-size: 0.75em;
-    color: #ccc;
-    text-align: center;
-    width: 100%;
-    z-index: 2;
-  }
-</style>
-
+    footer {
+      margin-top: 30px;
+      font-size: 0.75em;
+      color: #ccc;
+      text-align: center;
+      width: 100%;
+      z-index: 2;
+    }
+  </style>
 </head>
-<body>
 
-  <!-- Background and overlay -->
+<body>
   <div class="background"></div>
   <div class="overlay"></div>
 
-  <!-- Login box -->
   <div class="container">
     <h1>Välkommen till Ingrids 80 års kalas!</h1>
     <form id="loginForm">
@@ -176,8 +140,10 @@
         <input type="password" maxlength="1" class="pin-box" id="pin4" inputmode="numeric">
       </div>
     </form>
-    <p class="quote">Fun fact, the man on the image comes from "This-Person-Don't-Exisit.com"</p>
+    <p class="quote">Fun fact, the man on the image comes from "This-Person-Don’t-Exist.com"</p>
   </div>
+
+
   <script>
   const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
 
@@ -227,12 +193,6 @@
       }
     }
   }
-
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js")
-      .then(() => console.log("Service Worker registered"));
-  }
   </script>
 </body>
 </html>
-
