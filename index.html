@@ -13,9 +13,36 @@
     }
 	
 :root {
-  --bg-zoom: 145%;   /* zoom level */
-  --bg-pos-x: 25%;   /* horizontal position (0% = left, 100% = right) */
-  --bg-pos-y: 50%;   /* vertical position */
+  --bg-zoom: 145%;   /* default zoom for most screens */
+  --bg-pos-x: 25%;
+  --bg-pos-y: 50%;
+}
+
+/* Adjust for very tall (narrow) phone screens */
+@media (max-aspect-ratio: 9/16) {
+  :root {
+    --bg-zoom: 160%;
+    --bg-pos-x: 35%;
+    --bg-pos-y: 50%;
+  }
+}
+
+/* Adjust for more square screens (older phones or tablets) */
+@media (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3) {
+  :root {
+    --bg-zoom: 130%;
+    --bg-pos-x: 50%;
+    --bg-pos-y: 55%;
+  }
+}
+
+/* Adjust for wide landscape screens */
+@media (min-aspect-ratio: 16/9) {
+  :root {
+    --bg-zoom: 120%;
+    --bg-pos-x: 45%;
+    --bg-pos-y: 50%;
+  }
 }
 
     body {
@@ -209,4 +236,5 @@
   </script>
 </body>
 </html>
+
 
