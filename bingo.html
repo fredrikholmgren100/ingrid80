@@ -3,182 +3,228 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bingo</title>
+  <title>Bingo-Utmaningar</title>
   <style>
+    :root{
+      /* Background controls (same as play page) */
+      --bg-zoom: 240%;
+      --bg-pos-x: 50%;
+      --bg-pos-y: 50%;
+
+      /* Vertical nudge for the whole content (keeps original sizes) */
+      --bingo-shift: 20vh; /* try 5vh or 10vh to move down */
+    }
+
     body {
       font-family: Arial, sans-serif;
-      background: #1d1f27;
       color: white;
       text-align: center;
-      padding: 10px;
       margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      /* keep original feeling of spacing */
+      background: #1d1f27;
     }
+
+    /* Fullscreen background (play page style) */
+    .background{
+      position: fixed;
+      inset: 0;
+      background: url("letsboat-bg.png") no-repeat center center;
+      background-size: var(--bg-zoom);
+      background-position: var(--bg-pos-x) var(--bg-pos-y);
+      z-index: -2;
+    }
+    .overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: -1;
+    }
+
+    /* Keep content sizing like your original page */
+    .page{
+      padding: 10px 10px 20px;
+      margin-top: var(--bingo-shift); /* 🔹 move the whole thing up/down */
+    }
+
     h1 {
       margin-bottom: 15px;
-      font-size: 1.5em;
+      font-size: 1.5em; /* original size */
+      text-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
+
     .bingo-board {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(4, 1fr); /* 4x4 */
+      gap: 6px;                      /* original gap */
       width: 100%;
-      max-width: 450px;
-      margin: auto;
+      max-width: 450px;              /* original max width */
+      margin: auto;                  /* center */
     }
+
     .cell {
-      background: #2a2d38;
+      background: #2a2d38;          /* original cell bg */
       border-radius: 8px;
-      font-size: clamp(0.6em, 2.5vw, 0.9em);
+      font-size: clamp(0.6em, 2.5vw, 0.9em); /* original font scale */
       cursor: pointer;
       user-select: none;
       transition: background 0.3s, transform 0.2s;
       word-wrap: break-word;
-      padding: 5px;
-      aspect-ratio: 1 / 1;
+      padding: 5px;                  /* original padding */
+      aspect-ratio: 1 / 1;           /* square */
       display: flex;
       align-items: center;
       justify-content: center;
       text-align: center;
     }
+
     .cell.marked {
       background: #6C63FF;
       text-decoration: line-through;
     }
-    .cell:active {
-      transform: scale(0.95);
-    }
-    .back-btn {
-  position: fixed;
-  top: 15px;
-  right: 15px;
-  background: #6C63FF;
-  color: #fff;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 1em;
-  font-weight: bold;
-  cursor: pointer;
-  z-index: 1000;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  transition: background 0.2s;
-}
+    .cell:active { transform: scale(0.95); }
 
-.back-btn:hover {
-  background: #5a54d6;
-}
+    .progress {
+      margin-top: 12px;
+      font-size: 0.95em;
+      color: #ffd700;
+      font-weight: bold;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+
+    /* Back button (kept as before) */
+    .back-btn {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: #6C63FF;
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: background 0.2s;
+    }
+    .back-btn:hover { background: #5a54d6; }
   </style>
 </head>
 <body>
+  <div class="background"></div>
+  <div class="overlay"></div>
+
   <button class="back-btn" onclick="goBack()">⟵ Tillbaka</button>
-  <h1>🎲 Ingrid 80 Bingo</h1>
-  <div class="bingo-board" id="board"></div>
+
+  <div class="page">
+    <h1>🎉 Ingrids Bingo-Utmaningar</h1>
+    <div class="bingo-board" id="board"></div>
+    <div class="progress" id="progressText">Du har klarat 0 av 16 utmaningar</div>
+  </div>
 
   <script>
     const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
     const params = new URLSearchParams(window.location.search);
     const playerId = params.get("id");
 
-    const phrases = [
-      "Har pratat med Ingrid 🎂","Sett Ingrid dansa 💃","Kan en sång från 40-talet 🎵",
-      "Känt Ingrid i mer än 10 år","Ätit tårta 🎂","Besökt Ingrid hemma 🏡",
-      "Vet hennes favoritmat 🍲","Varit i samma stad som Ingrid 🏙️","Har en gemensam vän 👥",
-      "Delat ett skratt 😂","Tagit ett foto idag 📷","Har sjungit för Ingrid 🎤",
-      "Vet hennes födelsedag 🎉","Känner någon av hennes barn 👶","Har spelat ett spel idag 🎮",
-      "Pratat om Ingrid nyligen 🗣️","Tagit en selfie 🤳","Skrivit en hälsning ✍️",
-      "Vet hennes favoritfärg 🎨","Har dansat idag 💃","Har applåderat 👏",
-      "Sagt 'Grattis' 🎉","Delat en hemlighet 🤐","Vet hennes smeknamn","Kramat någon idag 🤗"
+    const challenges = [
+      "Hitta någon som har rest längst ✈️",
+      "Ta en selfie med födelsedagsbarnet 🤳",
+      "Dansa med en främling 💃",
+      "Hitta någon med samma födelsemånad 🎂",
+      "Sjung med i en låt 🎶",
+      "Berätta ett minne om Ingrid 🗣️",
+      "Skåla med någon du inte känner 🥂",
+      "Hitta någon som heter på samma bokstav som du 🔤",
+      "Gör high five med en gäst 🙌",
+      "Säg 'Grattis Ingrid!' riktigt högt 🎉",
+      "Hitta någon som har på sig blått 💙",
+      "Gissa vad Ingrids favoritfärg är 🎨",
+      "Ta ett gruppfoto 📸",
+      "Säg ett skämt till någon 😂",
+      "Dansa i minst 30 sekunder 🕺",
+      "Kramas! 🤗"
     ];
 
     const boardElement = document.getElementById("board");
+    const progressText = document.getElementById("progressText");
     let boardData = [];
     let marked = [];
 
-    // Load or generate board
     async function loadBoard() {
-      let res = await fetch(`${API_URL}/${playerId}`);
-      let data = await res.json();
-      let sheetKey = Object.keys(data)[0];
-      let player = data[sheetKey];
+      const res = await fetch(`${API_URL}/${playerId}`);
+      const data = await res.json();
+      const sheetKey = Object.keys(data)[0];
+      const player = data[sheetKey];
 
       let playerData = {};
-      try {
-        playerData = JSON.parse(player.data || "{}");
-      } catch {}
+      try { playerData = JSON.parse(player.data || "{}"); } catch {}
 
-      if (playerData.bingoBoard) {
-        // Already has board saved
-        boardData = playerData.bingoBoard;
-        marked = playerData.bingoMarked || Array(25).fill(false);
+      if (playerData.challengeBoard && playerData.challengeBoard.length === 16) {
+        boardData = playerData.challengeBoard;
+        marked = playerData.challengeMarked || Array(16).fill(false);
       } else {
-        // First time → create new board
-        boardData = phrases.sort(() => 0.5 - Math.random()).slice(0, 25);
-        marked = Array(25).fill(false);
-
-        playerData.bingoBoard = boardData;
-        playerData.bingoMarked = marked;
-
-        await fetch(`${API_URL}/${playerId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            blad1: { data: JSON.stringify(playerData) }
-          })
-        });
+        boardData = challenges.sort(() => 0.5 - Math.random()).slice(0, 16);
+        marked = Array(16).fill(false);
+        playerData.challengeBoard = boardData;
+        playerData.challengeMarked = marked;
+        await saveData(playerData);
       }
-
       renderBoard();
     }
 
-    // Render the board
+    async function saveData(playerData) {
+      await fetch(`${API_URL}/${playerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blad1: { data: JSON.stringify(playerData) } })
+      });
+    }
+
     function renderBoard() {
       boardElement.innerHTML = "";
       boardData.forEach((text, i) => {
-        let div = document.createElement("div");
+        const div = document.createElement("div");
         div.className = "cell" + (marked[i] ? " marked" : "");
         div.textContent = text;
         div.onclick = () => toggleCell(i);
         boardElement.appendChild(div);
       });
+      updateProgress();
     }
 
-    // Toggle a cell
     async function toggleCell(index) {
       marked[index] = !marked[index];
       renderBoard();
 
-      let res = await fetch(`${API_URL}/${playerId}`);
-      let data = await res.json();
-      let sheetKey = Object.keys(data)[0];
-      let player = data[sheetKey];
+      const res = await fetch(`${API_URL}/${playerId}`);
+      const data = await res.json();
+      const sheetKey = Object.keys(data)[0];
+      const player = data[sheetKey];
 
       let playerData = {};
-      try {
-        playerData = JSON.parse(player.data || "{}");
-      } catch {}
+      try { playerData = JSON.parse(player.data || "{}"); } catch {}
 
-      playerData.bingoBoard = boardData;
-      playerData.bingoMarked = marked;
+      playerData.challengeBoard = boardData;
+      playerData.challengeMarked = marked;
+      await saveData(playerData);
+    }
 
-      await fetch(`${API_URL}/${playerId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          blad1: { data: JSON.stringify(playerData) }
-        })
-      });
+    function updateProgress() {
+      const done = marked.filter(Boolean).length;
+      progressText.textContent = `Du har klarat ${done} av 16 utmaningar`;
+    }
+
+    function goBack() {
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = "play.html?id=" + playerId;
     }
 
     loadBoard();
-    function goBack() {
-  // If there’s history, go back; otherwise, go to index.html
-  if (window.history.length > 1) {
-    window.history.back();
-  } else {
-    window.location.href = "index.html";
-  }
-}
   </script>
 </body>
 </html>
-
