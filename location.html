@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gissa Platsen</title>
+  <style>
+    :root {
+      --bg-zoom: 250%;
+      --bg-pos-x: 50%;
+      --bg-pos-y: 50%;
+      --location-shift: 20vh; /* 🔹 change this to move page content up/down */
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background: #1d1f27;
+      position: relative;
+    }
+
+    /* 🔹 Background image (same as play page) */
+    .background {
+      position: fixed;
+      inset: 0;
+      background: url("letsboat-bg.png") center center no-repeat;
+      background-size: var(--bg-zoom);
+      background-position: var(--bg-pos-x) var(--bg-pos-y);
+      z-index: -2;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: -1;
+    }
+
+    .page {
+      margin-top: var(--location-shift); /* 🔹 control vertical offset */
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 1.6em;
+      margin-bottom: 15px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    img.location {
+      width: 90%;
+      max-width: 400px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    input[type="text"] {
+      width: 80%;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      margin-bottom: 12px;
+      text-align: center;
+      outline: none;
+      background: rgba(255,255,255,0.15);
+      color: white;
+    }
+
+    input::placeholder {
+      color: #ccc;
+    }
+
+    button {
+      background: #0066cc;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0052a8;
+    }
+
+    .feedback {
+      margin-top: 10px;
+      font-size: 1em;
+      color: #ffd700;
+    }
+
+    .progress {
+      margin-top: 15px;
+      color: #ddd;
+      font-size: 0.9em;
+    }
+
+    /* Back button */
+    .back-btn {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: #0066cc;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: background 0.2s;
+    }
+
+    .back-btn:hover {
+      background: #5a54d6;
+    }
+  </style>
+</head>
+<body>
+  <div class="background"></div>
+  <div class="overlay"></div>
+
+  <button class="back-btn" onclick="goBack()">⟵ Tillbaka</button>
+
+  <div class="page">
+    <h1>🌍 Gissa Platsen</h1>
+    <img id="locationImage" class="location" src="" alt="Plats att gissa">
+    <form onsubmit="checkAnswer(event)">
+      <input type="text" id="guess" placeholder="Skriv din gissning..." required>
+      <br>
+      <button type="submit">Skicka</button>
+    </form>
+    <div class="feedback" id="feedback"></div>
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <script>
+    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+    const params = new URLSearchParams(window.location.search);
+    const playerId = params.get("id");
+
+    // 🔹 PRESET LOCATIONS
+    const locations = [
+      { image: "maps1.jpg", answer: "Stockholm" },
+      { image: "maps2.jpg", answer: "Paris" },
+      { image: "maps3.jpg", answer: "Berlin" },
+      { image: "maps4.jpg", answer: "New York" },
+      { image: "maps5.jpg", answer: "Göteborg" }
+    ];
+
+    let currentIndex = 0;
+    let playerData = {};
+    const imageEl = document.getElementById("locationImage");
+    const feedbackEl = document.getElementById("feedback");
+    const progressEl = document.getElementById("progress");
+    const guessInput = document.getElementById("guess");
+
+    async function init() {
+      let res = await fetch(`${API_URL}/${playerId}`);
+      let data = await res.json();
+      let sheetKey = Object.keys(data)[0];
+      let player = data[sheetKey];
+
+      try { playerData = JSON.parse(player.data || "{}"); } catch {}
+
+      if (!playerData.guessLocation) {
+        playerData.guessLocation = { index: 0, answers: [] };
+      }
+
+      currentIndex = playerData.guessLocation.index;
+      loadLocation();
+    }
+
+    function loadLocation() {
+      const loc = locations[currentIndex];
+      imageEl.src = loc.image;
+      feedbackEl.textContent = "";
+      guessInput.value = "";
+      progressEl.textContent = `Fråga ${currentIndex + 1} av ${locations.length}`;
+    }
+
+    async function checkAnswer(e) {
+      e.preventDefault();
+      const guess = guessInput.value.trim().toLowerCase();
+      const correct = locations[currentIndex].answer.toLowerCase();
+      const correctAnswer = locations[currentIndex].answer;
+
+      let isCorrect = guess === correct;
+      feedbackEl.textContent = isCorrect
+        ? "✅ Rätt! Det var " + correctAnswer + "!"
+        : "❌ Fel, försök igen!";
+
+      playerData.guessLocation.answers[currentIndex] = guess;
+
+      if (isCorrect && currentIndex < locations.length - 1) {
+        currentIndex++;
+        playerData.guessLocation.index = currentIndex;
+        await saveData();
+        setTimeout(loadLocation, 1200);
+      } else {
+        await saveData();
+      }
+    }
+
+    async function saveData() {
+      await fetch(`${API_URL}/${playerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blad1: { data: JSON.stringify(playerData) } })
+      });
+    }
+
+    function goBack() {
+      window.location.href = "play.html?id=" + playerId;
+    }
+
+    init();
+  </script>
+</body>
+</html>
