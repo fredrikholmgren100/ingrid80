@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingrid 80 — Vinnarna!</title>
+  <style>
+    :root {
+      --accent: #6C63FF;
+      --gold: #FFD700;
+      --silver: #C0C0C0;
+      --bronze: #CD7F32;
+      --bg-zoom: 180%;
+      --bg-pos-x: 50%;
+      --bg-pos-y: 50%;
+    }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #1d1f27;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: white;
+      text-align: center;
+      height: 100vh;
+    }
+    .background {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: url("letsboat-bg.png") center center no-repeat;
+      background-size: var(--bg-zoom);
+      background-position: var(--bg-pos-x) var(--bg-pos-y);
+      filter: brightness(0.5) blur(3px);
+      z-index: -1;
+    }
+    h1 {
+      margin-top: 60px;
+      font-size: 2.2em;
+      color: var(--gold);
+      letter-spacing: 1px;
+      opacity: 0;
+      animation: fadeIn 2s forwards 1s;
+    }
+
+    .winner {
+      opacity: 0;
+      transform: scale(0.8);
+      margin: 40px 0;
+      transition: transform 1s ease, opacity 1s ease;
+    }
+
+    .winner.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .place {
+      font-size: 1.4em;
+      margin-bottom: 10px;
+    }
+
+    .name {
+      font-size: 2.4em;
+      font-weight: bold;
+      text-shadow: 0 0 12px rgba(255,255,255,0.7);
+    }
+
+    .bronze .name { color: var(--bronze); }
+    .silver .name { color: var(--silver); }
+    .gold .name { color: var(--gold); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes confetti {
+      0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    .confetti {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--gold);
+      top: 0; left: 50%;
+      opacity: 0;
+      animation: confetti 3s ease-out forwards;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      color: #ccc;
+      font-size: 1em;
+      opacity: 0;
+      animation: fadeIn 2s forwards 10s;
+    }
+  </style>
+</head>
+<body>
+  <div class="background"></div>
+  <h1>🏆 Och vinnarna är...</h1>
+
+  <div id="bronze" class="winner bronze">
+    <div class="place">🥉 3:e plats</div>
+    <div class="name">...</div>
+  </div>
+  <div id="silver" class="winner silver">
+    <div class="place">🥈 2:a plats</div>
+    <div class="name">...</div>
+  </div>
+  <div id="gold" class="winner gold">
+    <div class="place">🥇 1:a plats</div>
+    <div class="name">...</div>
+  </div>
+
+  <footer>🎉 Grattis till alla deltagare! Tack för att ni firade Ingrid 80! 🎂</footer>
+
+  <script>
+    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+
+    async function fetchWinners() {
+      let res = await fetch(API_URL);
+      let data = await res.json();
+      let sheetKey = Object.keys(data)[0];
+      let players = data[sheetKey];
+      if (!players) return [];
+
+      let results = [];
+
+      players.forEach(p => {
+        let photos = 0, bingo = 0, location = 0;
+        if (p.gallery) {
+          try { photos = JSON.parse(p.gallery).length; }
+          catch { photos = 1; }
+        }
+        let pdata = {};
+        try { pdata = JSON.parse(p.data || "{}"); } catch {}
+        if (pdata.bingoMarked) bingo = pdata.bingoMarked.filter(x => x).length / 4;
+        if (pdata.correctGuesses) location = pdata.correctGuesses.length || pdata.correctGuesses;
+
+        let totalPoints = photos * 1 + bingo * 5 + location * 2;
+        results.push({ name: p.name, totalPoints });
+      });
+
+      results.sort((a,b)=>b.totalPoints - a.totalPoints);
+      return results.slice(0, 3);
+    }
+
+    async function revealWinners() {
+      const winners = await fetchWinners();
+      if (winners.length < 3) return;
+
+      // Assign names
+      document.querySelector("#bronze .name").textContent = winners[2].name;
+      document.querySelector("#silver .name").textContent = winners[1].name;
+      document.querySelector("#gold .name").textContent = winners[0].name;
+
+      // Animate reveals with suspense delays
+      setTimeout(()=>document.getElementById("bronze").classList.add("visible"), 2500);
+      setTimeout(()=>document.getElementById("silver").classList.add("visible"), 4500);
+      setTimeout(()=>{
+        document.getElementById("gold").classList.add("visible");
+        dropConfetti();
+      }, 7000);
+    }
+
+    function dropConfetti() {
+      for (let i = 0; i < 100; i++) {
+        const confetti = document.createElement("div");
+        confetti.className = "confetti";
+        confetti.style.left = Math.random()*100 + "%";
+        confetti.style.background = ["#FFD700","#C0C0C0","#CD7F32","#6C63FF"][Math.floor(Math.random()*4)];
+        confetti.style.animationDelay = Math.random() * 1 + "s";
+        document.body.appendChild(confetti);
+        setTimeout(()=>confetti.remove(), 3000);
+      }
+    }
+
+    revealWinners();
+  </script>
+</body>
+</html>
