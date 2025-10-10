@@ -203,16 +203,54 @@
       width: auto;
       filter: brightness(0.9);
     }
+	
+	/* --- Digital Clock Styles --- */
+.clock-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 10px;
+  background: rgba(42,45,56,0.65);
+  padding: 10px 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+}
+
+.clock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #fff;
+}
+
+.clock .flag {
+  font-size: 1.3em;
+}
+
+.clock .label {
+  color: #ffd700;
+}
+
+.clock .time {
+  color: #87ceeb;
+  letter-spacing: 1px;
+}
+
   </style>
 </head>
 <body>
   <!-- Background layers -->
   <div class="background"></div>
   <div class="overlay"></div>
-
+  
   <!-- Buttons -->
   <button class="menu-btn" onclick="toggleMenu()">☰</button>
   <button class="back-btn" onclick="goBack()">⟵</button>
+  
 
   <!-- Side menu -->
   <div id="sideMenu" class="side-menu">
@@ -223,6 +261,21 @@
   </div>
 
   <div class="container">
+  
+    <div class="clock-box">
+  <div class="clock">
+    <span class="flag">🇸🇪</span>
+    <span class="label">Sverige</span>
+    <span id="swedenClock" class="time">--:--:--</span>
+  </div>
+  <div class="clock">
+    <span class="flag">🇫🇮</span>
+    <span class="label">Finland</span>
+    <span id="finlandClock" class="time">--:--:--</span>
+  </div>
+</div>
+
+  
     <div class="welcome-wrapper">
       <h1 id="welcome">Hej, spelare!</h1>
       <img src="viking.png" alt="right decoration" class="welcome-img">
@@ -288,7 +341,7 @@
   }
 
   function goBack() {
-    if (document.referrer && document.referrer.includes("play.html")) {§
+    if (document.referrer && document.referrer.includes("play.html")) {
       window.location.href = "play.html?id=" + playerId;
     } else if (window.history.length > 1) {
       window.history.back();
@@ -382,6 +435,27 @@
 
   fetchPlayer();
   updatePhotoCount();
+  
+// --- Digital Clocks ---
+function updateClocks() {
+  const now = new Date();
+  const swedenTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Stockholm" }));
+  const finlandTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Helsinki" }));
+
+  function formatTime(date) {
+    const h = date.getHours().toString().padStart(2, "0");
+    const m = date.getMinutes().toString().padStart(2, "0");
+    const s = date.getSeconds().toString().padStart(2, "0");
+    return `${h}:${m}:${s}`;
+  }
+
+  document.getElementById("swedenClock").textContent = formatTime(swedenTime);
+  document.getElementById("finlandClock").textContent = formatTime(finlandTime);
+}
+
+setInterval(updateClocks, 1000);
+updateClocks();
+  
   </script>
 </body>
 </html>
