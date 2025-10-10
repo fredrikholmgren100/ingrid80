@@ -215,13 +215,12 @@
   <button class="back-btn" onclick="goBack()">⟵</button>
 
   <!-- Side menu -->
-<div id="sideMenu" class="side-menu">
-  <a href="#" onclick="openGame('bingo.html')">🎲 Bingo</a>
-  <a href="#" onclick="openGame('quiz.html')">❓ Quiz</a>
-  <a href="#" onclick="openGame('location.html')">🌍 Guess the Location</a>
-  <a href="#" onclick="openGame('easter.html')">🥚 Found the Easter Eggs</a>
-  <a href="#" id="winnersLink" style="display:none;" onclick="openGame('winners.html')">🏆 Se Vinnarna</a>
-</div>
+  <div id="sideMenu" class="side-menu">
+    <a href="#" onclick="openGame('bingo.html')">🎲 Bingo</a>
+    <a href="#" onclick="openGame('quiz.html')">❓ Quiz</a>
+    <a href="#" onclick="openGame('location.html')">🌍 Guess the Location</a>
+    <a href="#" onclick="openGame('easter.html')">🥚 Found the Easter Eggs</a>
+  </div>
 
   <div class="container">
     <div class="welcome-wrapper">
@@ -232,14 +231,23 @@
     <img src="logo.png" alt="left decoration" class="logo-under-timer">
 
     <div class="game-card">
-      <h3>🕰️ Times to keep</h3>
+      <h3>🕰️ Tider att hålla koll på</h3>
       <p style="font-size:0.95em; color:#ccc; line-height:1.4;">
-        Här hittar du tiderna att minnas under festen:<br><br>
-        • 17:00 – Start och välkomstdrink 🍹<br>
-        • 18:30 – Middag serveras 🍽️<br>
-        • 20:00 – Bingo startar 🎲<br>
-        • 22:00 – Quiz och överraskningar ❓<br>
-        • 23:30 – Gemensam skål för Ingrid 🥂
+        Resans schema:<br><br>
+		<b>Lördag 22/11</b><br><br>
+        <b>• 17:00 –</b> Yalla, In i båt'n! 🍹<br>
+        <b>• 17:30 –</b> Middag i Salongen på däck??<br>
+        <b>• 20:00 –</b> Presentation och genomgång i konferensen på däck ??<br>
+        <b>• 21:00 –</b> Öl?<br>
+        <b>• 23:30 –</b> äh!.. en till eller hur?<br>
+		<b>• 02:32 -</b> <br><br>
+		<b>Söndag 23/11</b><br><br>
+		<b>• 10:30 -</b> Brunch på däck??<br>
+		<b>• 13:00 -</b> Avslut och prisutdelning i konferensen på däck??<br>
+		<b>• 14:00 -</b> Båten anländer till Stockholm <br>
+		<b>• 14:15 -</b> Yalla, av Båt'n!<br>
+		<b>• 15:00 -</b> Viking Line Anslutningsbuss Hpl 5 <i>(Samtliga passagerare ska vara på plats 10 minuter före bussens avgångstid)</i><br><br>
+		<b>• 15:01 -</b> Danke Schön und Auf Wiedersehn!
       </p>
     </div>
 
@@ -280,7 +288,7 @@
   }
 
   function goBack() {
-    if (document.referrer && document.referrer.includes("play.html")) {
+    if (document.referrer && document.referrer.includes("play.html")) {§
       window.location.href = "play.html?id=" + playerId;
     } else if (window.history.length > 1) {
       window.history.back();
@@ -289,26 +297,15 @@
     }
   }
 
-async function fetchPlayer() {
-  try {
-    let res = await fetch(API_URL);
-    let data = await res.json();
-    let sheetKey = Object.keys(data)[0];
-    let player = data[sheetKey].find(r => r.id == playerId);
-
-    if (player) {
-      document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
-
-      // 🔸 Show winner page only for Dev
-      if (player.name.toLowerCase() === "dev") {
-        document.getElementById("winnersLink").style.display = "block";
-      }
-    }
-  } catch (err) {
-    console.error("Error fetching player:", err);
+  async function fetchPlayer() {
+    try {
+      let res = await fetch(API_URL);
+      let data = await res.json();
+      let sheetKey = Object.keys(data)[0];
+      let player = data[sheetKey].find(r => r.id == playerId);
+      if (player) document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
+    } catch (err) { console.error("Error fetching player:", err); }
   }
-}
-
 
   async function updatePhotoCount() {
     try {
@@ -363,12 +360,12 @@ async function fetchPlayer() {
     window.location.href = url + "?id=" + encodeURIComponent(playerId);
   };
 
-  const reviewDate = new Date("2025-10-10T18:00:00").getTime();
+  const reviewDate = new Date("2025-11-23T13:30:00").getTime();
   function updateCountdown() {
     const now = new Date().getTime();
     const diff = reviewDate - now;
     if (diff <= 0) {
-      document.getElementById("countdown").textContent = "Tiden är slut!";
+      document.getElementById("countdown").textContent = "Spelen är över!";
       clearInterval(timerInterval); return;
     }
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -388,4 +385,3 @@ async function fetchPlayer() {
   </script>
 </body>
 </html>
-
