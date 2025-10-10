@@ -218,27 +218,114 @@
   backdrop-filter: blur(4px);
 }
 
-.clock {
+/* --- Analog Clock Styles --- */
+.clock-box {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 1.1em;
-  font-weight: bold;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 25px;
+  margin-top: 20px;
+  background: rgba(42,45,56,0.65);
+  padding: 15px 20px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  backdrop-filter: blur(6px);
+}
+
+.analog-clock {
+  text-align: center;
   color: #fff;
+  transform: scale(1); /* 20% smaller */
 }
 
-.clock .flag {
-  font-size: 1.3em;
-}
-
-.clock .label {
+.flag-label {
+  margin-bottom: 8px;
+  font-weight: bold;
   color: #ffd700;
 }
 
-.clock .time {
-  color: #87ceeb;
-  letter-spacing: 1px;
+.clock-face {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border: 3px solid rgba(255,255,255,0.6);
+  border-radius: 50%;
+  margin: 0 auto;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.6), 0 0 10px rgba(255,255,255,0.3);
+  overflow: hidden;
 }
+
+/* Flag backgrounds */
+.sweden-flag {
+  background: linear-gradient(to right, #006aa7 0 35%, #fecc00 35% 45%, #006aa7 45% 100%),
+              linear-gradient(to bottom, transparent 0 45%, #fecc00 45% 55%, transparent 55% 100%);
+  background-size: 100% 100%;
+}
+
+.finland-flag {
+  background: linear-gradient(to right, #fff 0 30%, #003580 30% 40%, #fff 40% 100%),
+              linear-gradient(to bottom, transparent 0 40%, #003580 40% 50%, transparent 50% 100%);
+  background-size: 100% 100%;
+}
+
+/* Numbers on clock */
+.numbers {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 10px;
+  color: #fff;
+}
+
+.numbers span {
+  position: absolute;
+  transform: rotate(calc(var(--i) * 30deg)) translateY(-29px) rotate(calc(var(--i) * -30deg));
+  font-weight: bold;
+  text-shadow: 0 0 4px #000;
+}
+
+.hand {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform-origin: bottom center;
+  background: #fff;
+  border-radius: 2px;
+  transform: rotate(0deg);
+}
+
+.hand.hour {
+  width: 3px;
+  height: 18px;
+  background: #000000;
+}
+
+.hand.minute {
+  width: 2px;
+  height: 26px;
+  background: #000000;
+}
+
+.hand.second {
+  width: 1.5px;
+  height: 30px;
+  background: #000000;
+}
+
+.center-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+
 
   </style>
 </head>
@@ -260,53 +347,73 @@
     <a href="#" onclick="openGame('easter.html')">🥚 Found the Easter Eggs</a>
   </div>
 
-  <div class="container">
-  
-    <div class="clock-box">
-  <div class="clock">
-    <span class="flag">🇸🇪</span>
-    <span class="label">Sverige</span>
-    <span id="swedenClock" class="time">--:--:--</span>
-  </div>
-  <div class="clock">
-    <span class="flag">🇫🇮</span>
-    <span class="label">Finland</span>
-    <span id="finlandClock" class="time">--:--:--</span>
-  </div>
-</div>
-
-  
+  <div class="container"> 
     <div class="welcome-wrapper">
       <h1 id="welcome">Hej, spelare!</h1>
       <img src="viking.png" alt="right decoration" class="welcome-img">
     </div>
     <div class="timer">Tid kvar att spela: <span id="countdown">--:--:--</span></div>
     <img src="logo.png" alt="left decoration" class="logo-under-timer">
+	
+	<!-- Analog Clocks Box -->
+<div class="clock-box">
+  <div class="analog-clock" id="swedenClockContainer">
+    <div class="flag-label">Sverige</div>
+    <div class="clock-face sweden-flag">
+      <div class="numbers">
+        <span style="--i:1">1</span><span style="--i:2">2</span><span style="--i:3">3</span>
+        <span style="--i:4">4</span><span style="--i:5">5</span><span style="--i:6">6</span>
+        <span style="--i:7">7</span><span style="--i:8">8</span><span style="--i:9">9</span>
+        <span style="--i:10">10</span><span style="--i:11">11</span><span style="--i:12">12</span>
+      </div>
+      <div class="hand hour" id="swedenHour"></div>
+      <div class="hand minute" id="swedenMinute"></div>
+      <div class="hand second" id="swedenSecond"></div>
+      <div class="center-dot"></div>
+    </div>
+  </div>
+
+  <div class="analog-clock" id="finlandClockContainer">
+    <div class="flag-label">Finland</div>
+    <div class="clock-face finland-flag">
+      <div class="numbers">
+        <span style="--i:1">1</span><span style="--i:2">2</span><span style="--i:3">3</span>
+        <span style="--i:4">4</span><span style="--i:5">5</span><span style="--i:6">6</span>
+        <span style="--i:7">7</span><span style="--i:8">8</span><span style="--i:9">9</span>
+        <span style="--i:10">10</span><span style="--i:11">11</span><span style="--i:12">12</span>
+      </div>
+      <div class="hand hour" id="finlandHour"></div>
+      <div class="hand minute" id="finlandMinute"></div>
+      <div class="hand second" id="finlandSecond"></div>
+      <div class="center-dot"></div>
+    </div>
+  </div>
+</div>
 
     <div class="game-card">
       <h3>🕰️ Tider att hålla koll på</h3>
       <p style="font-size:0.95em; color:#ccc; line-height:1.4;">
         Resans schema:<br><br>
 		<b>Lördag 22/11</b><br><br>
-        <b>• 17:00 –</b> Yalla, In i båt'n! 🍹<br>
-        <b>• 17:30 –</b> Middag i Salongen på däck??<br>
-        <b>• 20:00 –</b> Presentation och genomgång i konferensen på däck ??<br>
-        <b>• 21:00 –</b> Öl?<br>
-        <b>• 23:30 –</b> äh!.. en till eller hur?<br>
-		<b>• 02:32 -</b> <br><br>
+        <b>• 17:00 –</b> Yalla, In i båt'n! 🚢<br>
+        <b>• 17:30 –</b> Middag i Salongen på däck?? 🍔<br>
+        <b>• 20:00 –</b> Presentation och genomgång i konferensen på däck?? 🎯<br>
+        <b>• 21:00 –</b> Öl? 🍺<br>
+        <b>• 23:30 –</b> äh!.. en till eller hur? 🍻🍻🍻🍻<br>
+		<b>• 02:32 - 🤮 </b> <br><br>
 		<b>Söndag 23/11</b><br><br>
-		<b>• 10:30 -</b> Brunch på däck??<br>
-		<b>• 13:00 -</b> Avslut och prisutdelning i konferensen på däck??<br>
-		<b>• 14:00 -</b> Båten anländer till Stockholm <br>
-		<b>• 14:15 -</b> Yalla, av Båt'n!<br>
-		<b>• 15:00 -</b> Viking Line Anslutningsbuss Hpl 5 <i>(Samtliga passagerare ska vara på plats 10 minuter före bussens avgångstid)</i><br><br>
-		<b>• 15:01 -</b> Danke Schön und Auf Wiedersehn!
+		<b>• 10:30 -</b> Brunch på däck?? ☕<br>
+		<b>• 13:00 -</b> Avslut och prisutdelning i konferensen på däck?? 🏆<br>
+		<b>• 14:00 -</b> Båten anländer till Stockholm 🇸🇪<br>
+		<b>• 14:15 -</b> Yalla, av Båt'n! 🚢<br>
+		<b>• 15:00 -</b> Viking Line Anslutningsbuss Hpl 5 <i>(Samtliga passagerare ska vara på plats 10 minuter före bussens avgångstid) 🚌</i><br><br>
+		<b>• 15:01 -</b> Danke Schön und Auf Wiedersehn! 🇩🇪
       </p>
     </div>
 
     <div class="game-card">
-      <h3>📷 Gallery</h3>
-      <p>Ta en bild och ladda upp</p>
+      <h3>📷 Resans minnen!</h3>
+      <p>Ta en bild och ladda upp i ett klick</p>
       <input type="file" id="photoUpload" accept="image/*" capture="environment" style="margin-top:10px;">
       <p style="margin-top:10px; font-size:0.9em; color:#ccc;">
         Totalt antal bilder: <span id="photoCount">0</span>
@@ -316,7 +423,7 @@
   </div>
 
   <footer class="sponsor-footer">
-    <p style="margin-bottom:10px; color:#ccc;">Sponsored by</p>
+    <p style="margin-bottom:10px; color:#ccc;">Sponsrade av</p>
     <div class="sponsor-logos">
       <img src="sponsor1.png" alt="Sponsor 1">
       <img src="sponsor2.png" alt="Sponsor 2">
@@ -436,25 +543,34 @@
   fetchPlayer();
   updatePhotoCount();
   
-// --- Digital Clocks ---
-function updateClocks() {
+// --- Analog Clocks for Sweden & Finland ---
+function updateAnalogClocks() {
   const now = new Date();
   const swedenTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Stockholm" }));
   const finlandTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Helsinki" }));
 
-  function formatTime(date) {
-    const h = date.getHours().toString().padStart(2, "0");
-    const m = date.getMinutes().toString().padStart(2, "0");
-    const s = date.getSeconds().toString().padStart(2, "0");
-    return `${h}:${m}:${s}`;
+  function setClock(time, prefix) {
+    const seconds = time.getSeconds();
+    const minutes = time.getMinutes();
+    const hours = time.getHours();
+
+    const secondDeg = seconds * 6;
+    const minuteDeg = minutes * 6 + seconds * 0.1;
+    const hourDeg = ((hours % 12) / 12) * 360 + minutes * 0.5;
+
+    document.getElementById(prefix + "Hour").style.transform = `rotate(${hourDeg}deg)`;
+    document.getElementById(prefix + "Minute").style.transform = `rotate(${minuteDeg}deg)`;
+    document.getElementById(prefix + "Second").style.transform = `rotate(${secondDeg}deg)`;
   }
 
-  document.getElementById("swedenClock").textContent = formatTime(swedenTime);
-  document.getElementById("finlandClock").textContent = formatTime(finlandTime);
+  setClock(swedenTime, "sweden");
+  setClock(finlandTime, "finland");
 }
 
-setInterval(updateClocks, 1000);
-updateClocks();
+setInterval(updateAnalogClocks, 1000);
+updateAnalogClocks();
+
+
   
   </script>
 </body>
