@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alkoholtestet 🍻</title>
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle at center, #1b1d26, #0f1014);
+      color: #fff;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      color: #ffd700;
+    }
+
+    .scoreboard {
+      text-align: center;
+      margin-top: 15px;
+      z-index: 10;
+    }
+
+    .game-area {
+      position: relative;
+      width: 90vw;
+      height: 70vh;
+      margin-top: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.15);
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .boat {
+      position: absolute;
+      font-size: 40px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s;
+    }
+
+    .boat:active {
+      transform: scale(0.9);
+    }
+
+    .result {
+      margin-top: 15px;
+      font-size: 1.3em;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    button {
+      margin-top: 15px;
+      background: #0066cc;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    button:hover {
+      background: #0059b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="scoreboard">
+    <h1>🍻 Alkoholtestet</h1>
+    <p>Klicka på alla båtar som dyker upp!</p>
+    <p>Poäng: <span id="score">0</span> / <span id="total">0</span></p>
+    <button id="startBtn">Starta Testet</button>
+  </div>
+
+  <div class="game-area" id="gameArea"></div>
+
+  <div class="result" id="resultText"></div>
+
+  <script>
+    const gameArea = document.getElementById('gameArea');
+    const scoreDisplay = document.getElementById('score');
+    const totalDisplay = document.getElementById('total');
+    const resultText = document.getElementById('resultText');
+    const startBtn = document.getElementById('startBtn');
+
+    let score = 0;
+    let total = 0;
+    let gameRunning = false;
+    let gameInterval;
+
+    function randomPosition() {
+      const areaRect = gameArea.getBoundingClientRect();
+      const boatSize = 60; // estimated emoji area
+      const x = Math.random() * (areaRect.width - boatSize);
+      const y = Math.random() * (areaRect.height - boatSize);
+      return { x, y };
+    }
+
+    function spawnBoat() {
+      if (!gameRunning) return;
+      total++;
+      totalDisplay.textContent = total;
+
+      const boat = document.createElement('div');
+      boat.classList.add('boat');
+      boat.textContent = "🛳️";
+      const { x, y } = randomPosition();
+      boat.style.left = `${x}px`;
+      boat.style.top = `${y}px`;
+
+      boat.addEventListener('click', () => {
+        score++;
+        scoreDisplay.textContent = score;
+        boat.remove();
+      });
+
+      gameArea.appendChild(boat);
+
+      // Remove boat after 1.5s if not clicked
+      setTimeout(() => {
+        if (gameArea.contains(boat)) boat.remove();
+      }, 1500);
+    }
+
+    function startGame() {
+      if (gameRunning) return;
+      score = 0;
+      total = 0;
+      scoreDisplay.textContent = "0";
+      totalDisplay.textContent = "0";
+      resultText.textContent = "";
+      gameRunning = true;
+      startBtn.disabled = true;
+
+      // Spawn boats every 700ms for 15 seconds
+      gameInterval = setInterval(spawnBoat, 700);
+      setTimeout(endGame, 15000);
+    }
+
+    function endGame() {
+      gameRunning = false;
+      clearInterval(gameInterval);
+      startBtn.disabled = false;
+
+      const accuracy = total > 0 ? (score / total) * 100 : 0;
+      let result = "";
+	  if (accuracy > 99) result = "Gay.. Gå här ifrån";
+      else if (accuracy > 80) result = "🍹 Du är nykter som en nunna!";
+      else if (accuracy > 50) result = "🍺 Lite vinglig, men fortfarande stående!";
+      else result = "🤪 Du borde kanske ta en taxi hem...";
+
+      resultText.textContent = `${result} (${accuracy.toFixed(0)}%)`;
+    }
+
+    startBtn.addEventListener('click', startGame);
+
+    // Keep game area always fitting the screen
+    window.addEventListener('resize', () => {
+      const areaRect = gameArea.getBoundingClientRect();
+      gameArea.style.width = `${Math.min(window.innerWidth * 0.9, 1000)}px`;
+      gameArea.style.height = `${Math.min(window.innerHeight * 0.7, 700)}px`;
+    });
+  </script>
+</body>
+</html>
