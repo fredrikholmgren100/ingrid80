@@ -3,584 +3,485 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Din Speldashboard</title>
+  <title>Bingo-Utmaningar</title>
   <style>
-    :root {
-      --bg-zoom: 250%;
+    :root{
+      --bg-zoom: 240%;
       --bg-pos-x: 50%;
       --bg-pos-y: 50%;
+      --bingo-shift: 20vh;
     }
 
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      color: white;
+      text-align: center;
+      margin: 0;
       min-height: 100vh;
-      padding: 20px;
-      position: relative;
       overflow-x: hidden;
+      position: relative;
+      background: #1d1f27;
     }
 
-    /* Background image setup */
-    .background {
+    .background{
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: url("letsboat-bg.png") center center no-repeat;
+      inset: 0;
+      background: url("letsboat-bg.png") no-repeat center center;
       background-size: var(--bg-zoom);
       background-position: var(--bg-pos-x) var(--bg-pos-y);
-      transition: background-size 0.3s ease, background-position 0.3s ease;
       z-index: -2;
     }
-
-    .overlay {
+    .overlay{
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
       z-index: -1;
     }
 
-    .container {
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-      margin-top: 60px;
-      backdrop-filter: blur(0px);
-      padding: 20px;
+    .page{
+      padding: 10px 10px 20px;
+      margin-top: var(--bingo-shift);
     }
 
     h1 {
-      font-size: 1.8em;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
 
-    .timer {
-      font-size: 1.2em;
-      margin: 15px 0;
-      font-weight: bold;
-      color: #ffd700;
+    .bingo-board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      width: 100%;
+      max-width: 450px;
+      margin: auto;
     }
 
-    .game-card {
-      background: rgba(42,45,56,0.65);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      text-align: center;
-      margin-top: 20px;
-      backdrop-filter: blur(6px);
-    }
-
-    button {
-      margin-top: 10px;
-      background: #0066cc;
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      font-weight: bold;
+    .cell {
+      background: #2a2d38;
+      border-radius: 8px;
+      font-size: clamp(0.6em, 2.5vw, 0.9em);
       cursor: pointer;
-    }
-
-    button:hover {
-      background: #0059b3;
-    }
-
-    .welcome-wrapper {
+      user-select: none;
+      transition: background 0.3s, transform 0.2s;
+      word-wrap: break-word;
+      padding: 5px;
+      aspect-ratio: 1 / 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 10px;
+      text-align: center;
+    }
+    .cell.marked {
+      background: #6C63FF;
+      text-decoration: line-through;
+      position: relative;
+    }
+    .cell.marked::after{
+      content: attr(data-prooficon);
+      position: absolute;
+      bottom: 4px;
+      right: 6px;
+      font-size: 1.1em;
+      opacity: 0.95;
+    }
+    .cell:active { transform: scale(0.95); }
+
+    .progress {
+      margin-top: 12px;
+      font-size: 0.95em;
+      color: #ffd700;
+      font-weight: bold;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
     }
 
-    .welcome-wrapper h1 {
-      margin: 0;
-      font-size: 1.8em;
-    }
-
-    .welcome-img {
-      width: 60px;
-      height: 60px;
-    }
-
-    /* Hamburger button */
-    .menu-btn {
-      position: fixed;
-      top: 15px;
-      left: 15px;
-      font-size: 1.8em;
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      z-index: 1001;
-    }
-
-    /* Back button */
     .back-btn {
       position: fixed;
       top: 15px;
       right: 15px;
-      background: #0066cc;
+      background: #6C63FF;
       color: #fff;
       border: none;
-      padding: 8px 12px;
-      border-radius: 50%;
-      font-size: 1.3em;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: bold;
       cursor: pointer;
-      z-index: 1002;
+      z-index: 1000;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       transition: background 0.2s;
     }
+    .back-btn:hover { background: #5a54d6; }
 
-    .back-btn:hover {
-      background: #0059b3;
-    }
-
-    /* Side menu */
-    .side-menu {
+    /* ===== Modals ===== */
+    .modal-backdrop {
       position: fixed;
-      top: 0;
-      left: -240px;
-      width: 220px;
-      height: 100%;
-      background: rgba(42,45,56,0.95);
-      padding-top: 120px;
-      transition: left 0.3s;
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
     }
-
-    .side-menu a {
-      padding: 15px 20px;
-      text-decoration: none;
-      color: white;
-      font-weight: bold;
-      border-bottom: 1px solid #444;
+    .modal {
+      background: #2a2d38;
+      color: #fff;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
       text-align: left;
     }
-
-    .side-menu a:hover {
-      background: #6C63FF;
+    .modal h3 {
+      margin: 0 0 8px 0;
+      font-size: 1.2em;
     }
-
-    .side-menu.open {
-      left: 0;
+    .modal p {
+      margin: 0 0 14px 0;
+      color: #ddd;
+      font-size: 0.95em;
     }
-
-    .logo-under-timer {
-      width: 160px;
-      height: auto;
-      margin-top: 12px;
-    }
-
-    .sponsor-footer {
-      margin-top: 40px;
-      padding: 15px;
-      text-align: center;
-      border-top: 1px solid #444;
-      background: rgba(0,0,0,0.4);
-      border-radius: 10px;
-    }
-
-    .sponsor-logos {
+    .modal .row {
       display: flex;
-      justify-content: center;
-      gap: 20px;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
     }
-
-    .sponsor-logos img {
-      height: 50px;
-      width: auto;
-      filter: brightness(0.9);
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #6C63FF;
+      color: #fff;
+      flex: 1;
+      text-align: center;
     }
-	
-	/* --- Digital Clock Styles --- */
-.clock-box {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  margin-top: 10px;
-  background: rgba(42,45,56,0.65);
-  padding: 10px 15px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-  backdrop-filter: blur(4px);
-}
-
-/* --- Analog Clock Styles --- */
-.clock-box {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 25px;
-  margin-top: 20px;
-  background: rgba(42,45,56,0.65);
-  padding: 15px 20px;
-  border-radius: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  backdrop-filter: blur(6px);
-}
-
-.analog-clock {
-  text-align: center;
-  color: #fff;
-  transform: scale(1); /* 20% smaller */
-}
-
-.flag-label {
-  margin-bottom: 8px;
-  font-weight: bold;
-  color: #ffd700;
-}
-
-.clock-face {
-  position: relative;
-  width: 72px;
-  height: 72px;
-  border: 3px solid rgba(255,255,255,0.6);
-  border-radius: 50%;
-  margin: 0 auto;
-  box-shadow: inset 0 0 8px rgba(0,0,0,0.6), 0 0 10px rgba(255,255,255,0.3);
-  overflow: hidden;
-}
-
-/* Flag backgrounds */
-.sweden-flag {
-  background: linear-gradient(to right, #006aa7 0 35%, #fecc00 35% 45%, #006aa7 45% 100%),
-              linear-gradient(to bottom, transparent 0 45%, #fecc00 45% 55%, transparent 55% 100%);
-  background-size: 100% 100%;
-}
-
-.finland-flag {
-  background: linear-gradient(to right, #fff 0 30%, #003580 30% 40%, #fff 40% 100%),
-              linear-gradient(to bottom, transparent 0 40%, #003580 40% 50%, transparent 50% 100%);
-  background-size: 100% 100%;
-}
-
-/* Numbers on clock */
-.numbers {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 10px;
-  color: #fff;
-}
-
-.numbers span {
-  position: absolute;
-  transform: rotate(calc(var(--i) * 30deg)) translateY(-29px) rotate(calc(var(--i) * -30deg));
-  font-weight: bold;
-  text-shadow: 0 0 4px #000;
-}
-
-.hand {
-  position: absolute;
-  bottom: 50%;
-  left: 50%;
-  transform-origin: bottom center;
-  background: #fff;
-  border-radius: 2px;
-  transform: rotate(0deg);
-}
-
-.hand.hour {
-  width: 3px;
-  height: 18px;
-  background: #000000;
-}
-
-.hand.minute {
-  width: 2px;
-  height: 26px;
-  background: #000000;
-}
-
-.hand.second {
-  width: 1.5px;
-  height: 30px;
-  background: #000000;
-}
-
-.center-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 6px;
-  height: 6px;
-  background: #fff;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-}
-
-
-
+    .btn.secondary { background: #3a3e4e; }
+    .btn:hover { filter: brightness(1.05); }
+    .modal textarea {
+      width: 100%;
+      min-height: 110px;
+      border-radius: 10px;
+      border: none;
+      padding: 10px;
+      resize: vertical;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      outline: none;
+      font-size: 0.95em;
+    }
+    .meta {
+      font-size: 0.85em;
+      color: #bbb;
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
-  <!-- Background layers -->
   <div class="background"></div>
   <div class="overlay"></div>
-  
-  <!-- Buttons -->
-  <button class="menu-btn" onclick="toggleMenu()">☰</button>
-  <button class="back-btn" onclick="goBack()">⟵</button>
-  
 
-  <!-- Side menu -->
-  <div id="sideMenu" class="side-menu">
-    <a href="#" onclick="openGame('bingo.html')">🎲 Bingo</a>
-    <a href="#" onclick="openGame('quiz.html')">❓ Quiz</a>
-    <a href="#" onclick="openGame('location.html')">🌍 Guess the Location</a>
-    <a href="#" onclick="openGame('easter.html')">🥚 Found the Easter Eggs</a>
-	<a href="#" onclick="openGame('alcohol-test.html')">🍻 Alkoholtestet</a>
+  <button class="back-btn" onclick="goBack()">⟵ Tillbaka</button>
+
+  <div class="page">
+    <h1>🎉 Ingrids Bingo-Utmaningar</h1>
+    <div class="bingo-board" id="board"></div>
+    <div class="progress" id="progressText">Du har klarat 0 av 16 utmaningar</div>
   </div>
 
-  <div class="container"> 
-    <div class="welcome-wrapper">
-      <h1 id="welcome">Hej, spelare!</h1>
-      <img src="viking.png" alt="right decoration" class="welcome-img">
-    </div>
-    <div class="timer">Tid kvar att spela: <span id="countdown">--:--:--</span></div>
-    <img src="logo.png" alt="left decoration" class="logo-under-timer">
-	
-	<!-- Analog Clocks Box -->
-<div class="clock-box">
-  <div class="analog-clock" id="swedenClockContainer">
-    <div class="flag-label">Sverige</div>
-    <div class="clock-face sweden-flag">
-      <div class="numbers">
-        <span style="--i:1">1</span><span style="--i:2">2</span><span style="--i:3">3</span>
-        <span style="--i:4">4</span><span style="--i:5">5</span><span style="--i:6">6</span>
-        <span style="--i:7">7</span><span style="--i:8">8</span><span style="--i:9">9</span>
-        <span style="--i:10">10</span><span style="--i:11">11</span><span style="--i:12">12</span>
+  <!-- ===== Proof chooser modal ===== -->
+  <div class="modal-backdrop" id="chooserBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="chooserTitle">
+      <h3 id="chooserTitle">Välj bevis</h3>
+      <p id="chooserTaskText">Välj hur du vill styrka rutan.</p>
+      <div class="row">
+        <button class="btn" id="chooseTextBtn">✍️ Skriv text</button>
+        <button class="btn" id="choosePhotoBtn">📷 Ladda upp foto</button>
       </div>
-      <div class="hand hour" id="swedenHour"></div>
-      <div class="hand minute" id="swedenMinute"></div>
-      <div class="hand second" id="swedenSecond"></div>
-      <div class="center-dot"></div>
-    </div>
-  </div>
-
-  <div class="analog-clock" id="finlandClockContainer">
-    <div class="flag-label">Finland</div>
-    <div class="clock-face finland-flag">
-      <div class="numbers">
-        <span style="--i:1">1</span><span style="--i:2">2</span><span style="--i:3">3</span>
-        <span style="--i:4">4</span><span style="--i:5">5</span><span style="--i:6">6</span>
-        <span style="--i:7">7</span><span style="--i:8">8</span><span style="--i:9">9</span>
-        <span style="--i:10">10</span><span style="--i:11">11</span><span style="--i:12">12</span>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn secondary" id="chooserCancel">Avbryt</button>
       </div>
-      <div class="hand hour" id="finlandHour"></div>
-      <div class="hand minute" id="finlandMinute"></div>
-      <div class="hand second" id="finlandSecond"></div>
-      <div class="center-dot"></div>
-    </div>
-  </div>
-</div>
-
-    <div class="game-card">
-      <h3>🕰️ Tider att hålla koll på</h3><i>Alla tider är i Svensk tid:</i>
-      <p style="font-size:0.95em; color:#ccc; line-height:1.4;">
-        Resans schema:<br><br>
-		<b>Lördag 22/11</b><br><br>
-        <b>• 16:30 –</b> Yalla, In i båt'n! 🚢<br>
-        <b>• 17:30 –</b> Middag i Salongen på däck <b>6</b> 🍔<br>
-        <b>• 20:00 –</b> Skål för Ingrid i Konf. på däck <b>6</b> 🎯<br>
-        <b>• 21:05 –</b> Öl? 🍺<br>
-        <b>• 23:30 –</b> äh!.. en till eller hur? 🍻🍻🍸🍸<br>
-		<b>• 02:32 - 🤮 </b> <br><br>
-		<b>Söndag 23/11</b><br><br>
-		<b>• 10:30 -</b> Brunch i Salongen, på däck <b>6</b> ☕<br>
-		<b>• 13:00 -</b> Kaffe och avslut samt prisutdelning i Konf. på däck <b>6</b> 🏆<br>
-		<b>• 14:30 -</b> Båten anländer till Stockholm 🇸🇪<br>
-		<b>• 14:35 -</b> Yalla, av Båt'n! 🚢<br>
-		<b>• 15:00 -</b> Viking Line Anslutningsbuss Hpl 5 <i>(Samtliga passagerare ska vara på plats 10 minuter före bussens avgångstid) 🚌</i><br><br>
-		<b>• 15:01 -</b> Danke Schön und Auf Wiedersehn! 🇩🇪
-      </p>
-    </div>
-
-    <div class="game-card">
-      <h3>📷 Resans minnen!</h3>
-      <p>Ta en bild och ladda upp i ett klick</p>
-      <input type="file" id="photoUpload" accept="image/*" capture="environment" style="margin-top:10px;">
-      <p style="margin-top:10px; font-size:0.9em; color:#ccc;">
-        Totalt antal bilder: <span id="photoCount">0</span>
-      </p>
-      <button onclick="viewGallery()">Se galleriet</button>
+      <div class="meta">Du måste lämna bevis för att markera rutan.</div>
     </div>
   </div>
 
-  <footer class="sponsor-footer">
-    <p style="margin-bottom:10px; color:#ccc;">Sponsrad av</p>
-    <div class="sponsor-logos">
-      <img src="sponsor1.png" alt="Sponsor 1">
-      <img src="sponsor2.png" alt="Sponsor 2">
-      <img src="sponsor3.png" alt="Sponsor 3">
-	  <img src="sponsor4.png" alt="Sponsor 4">
+  <!-- ===== Text input modal ===== -->
+  <div class="modal-backdrop" id="textBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="textTitle">
+      <h3 id="textTitle">Skriv en kort bekräftelse</h3>
+      <p id="textTaskText">Vad gjorde du?</p>
+      <textarea id="proofText" placeholder="Ex: 'Skålade med Anna vid baren'"></textarea>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn" id="saveTextProof">Spara & markera</button>
+        <button class="btn secondary" id="textCancel">Avbryt</button>
+      </div>
     </div>
-	  <br>
-  </footer>
+  </div>
+
+  <!-- Hidden photo input (SAME id and behavior as player page) -->
+  <input type="file" id="photoUpload" accept="image/*" capture="environment" style="display:none;">
 
   <script>
-  // --- LOGIN PROTECTION ---
-  if (!sessionStorage.getItem("loggedIn")) window.location.replace("index.html");
-  window.addEventListener("beforeunload", () => sessionStorage.removeItem("loggedIn"));
+    // --- Sheety + Cloudinary setup ---
+    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+    const params = new URLSearchParams(window.location.search);
+    const playerId = params.get("id");
 
-  // --- Sheety + Cloudinary setup ---
-  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
-  const params = new URLSearchParams(window.location.search);
-  const playerId = params.get("id");
-  const CLOUD_NAME = "dtweoqypu";
-  const UPLOAD_PRESET = "Ingrid80";
+    // Cloudinary (same as player page)
+    const CLOUD_NAME = "dtweoqypu";
+    const UPLOAD_PRESET = "Ingrid80";
 
-  function toggleMenu() {
-    document.getElementById("sideMenu").classList.toggle("open");
-  }
+    const challenges = [
+      "Hitta någon som har rest längst ✈️",
+      "Ta en selfie med födelsedagsbarnet 🤳",
+      "Dansa med en främling 💃",
+      "Hitta någon med samma födelsemånad 🎂",
+      "Sjung med i en låt 🎶",
+      "Berätta ett minne om Ingrid för Ingrid 🗣️",
+      "Skåla med någon du inte känner 🥂",
+      "Hitta någon som heter på samma bokstav som du 🔤",
+      "Gör high five med en gäst 🙌",
+      "Säg 'Grattis Ingrid!' riktigt högt 🎉",
+      "Hitta någon som har på sig något blått 💙",
+      "Gissa vilken Ingrids favoritfärg är 🎨",
+      "Ta ett gruppfoto 📸",
+      "Säg ett skämt till någon 😂",
+      "Dansa i minst 30 sekunder 🕺",
+      "Ta en shot! 🤗"
+    ];
 
-  function goBack() {
-    if (document.referrer && document.referrer.includes("play.html")) {
-      window.location.href = "play.html?id=" + playerId;
-    } else if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.href = "index.html";
+    const boardElement = document.getElementById("board");
+    const progressText = document.getElementById("progressText");
+
+    // Modals & inputs
+    const chooserBackdrop = document.getElementById("chooserBackdrop");
+    const chooseTextBtn   = document.getElementById("chooseTextBtn");
+    const choosePhotoBtn  = document.getElementById("choosePhotoBtn");
+    const chooserCancel   = document.getElementById("chooserCancel");
+    const textBackdrop    = document.getElementById("textBackdrop");
+    const textCancel      = document.getElementById("textCancel");
+    const saveTextProof   = document.getElementById("saveTextProof");
+    const proofText       = document.getElementById("proofText");
+    const photoInput      = document.getElementById("photoUpload");
+    const chooserTaskText = document.getElementById("chooserTaskText");
+    const textTaskText    = document.getElementById("textTaskText");
+
+    let boardData = [];
+    let marked = [];
+    let evidence = []; // array of { type: 'text'|'photo', value: string (text or image URL), ts, name? } or null
+    let pendingIndex = null; // which tile we are working on
+
+    // ---- Utilities to get & save player data ----
+    async function getPlayerRow() {
+      const res = await fetch(`${API_URL}/${playerId}`);
+      const json = await res.json();
+      const sheetKey = Object.keys(json)[0];
+      return json[sheetKey];
     }
-  }
 
-  async function fetchPlayer() {
-    try {
-      let res = await fetch(API_URL);
-      let data = await res.json();
-      let sheetKey = Object.keys(data)[0];
-      let player = data[sheetKey].find(r => r.id == playerId);
-      if (player) document.getElementById("welcome").textContent = "Hej, " + player.name + "!";
-    } catch (err) { console.error("Error fetching player:", err); }
-  }
-
-  async function updatePhotoCount() {
-    try {
-      let res = await fetch(API_URL);
-      let data = await res.json();
-      let sheetKey = Object.keys(data)[0];
-      let rows = data[sheetKey];
-      let totalImages = 0;
-      rows.forEach(r => {
-        if (r.gallery) {
-          try { let arr = JSON.parse(r.gallery); totalImages += arr.length; }
-          catch (e) { totalImages += 1; }
-        }
+    async function putPlayerFields(fields) {
+      await fetch(`${API_URL}/${playerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blad1: fields })
       });
-      document.getElementById("photoCount").textContent = totalImages;
-    } catch (err) { console.error("Error counting photos:", err); }
-  }
-
-  async function uploadPhoto(file) {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", UPLOAD_PRESET);
-    let res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-      method: "POST", body: formData
-    });
-    let json = await res.json();
-    let imageUrl = json.secure_url;
-    let res2 = await fetch(`${API_URL}/${playerId}`);
-    let data = await res2.json();
-    let sheetKey = Object.keys(data)[0];
-    let player = data[sheetKey];
-    let gallery = [];
-    try { gallery = JSON.parse(player.gallery || "[]"); } catch (e) { gallery = []; }
-    gallery.push(imageUrl);
-    await fetch(`${API_URL}/${playerId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ blad1: { gallery: JSON.stringify(gallery) } })
-    });
-    alert("Bilden har laddats upp!");
-    updatePhotoCount();
-  }
-
-  document.getElementById("photoUpload").addEventListener("change", function() {
-    if (this.files && this.files[0]) uploadPhoto(this.files[0]);
-  });
-
-  function viewGallery() { window.location.href = "gallery.html?id=" + playerId; }
-
-  window.openGame = function (url) {
-    toggleMenu();
-    window.location.href = url + "?id=" + encodeURIComponent(playerId);
-  };
-
-  const reviewDate = new Date("2025-11-23T12:30:00").getTime();
-  function updateCountdown() {
-    const now = new Date().getTime();
-    const diff = reviewDate - now;
-    if (diff <= 0) {
-      document.getElementById("countdown").textContent = "Spelen är över!";
-      clearInterval(timerInterval); return;
     }
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    let text = "";
-    if (days > 0) text += days + "d ";
-    text += (hours<10?"0"+hours:hours)+":"+(minutes<10?"0"+minutes:minutes)+":"+(seconds<10?"0"+seconds:seconds);
-    document.getElementById("countdown").textContent = text;
-  }
-  const timerInterval = setInterval(updateCountdown, 1000);
-  updateCountdown();
 
-  fetchPlayer();
-  updatePhotoCount();
-  
-// --- Analog Clocks for Sweden & Finland ---
-function updateAnalogClocks() {
-  const now = new Date();
-  const swedenTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Stockholm" }));
-  const finlandTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Helsinki" }));
+    async function loadBoard() {
+      const player = await getPlayerRow();
 
-  function setClock(time, prefix) {
-    const seconds = time.getSeconds();
-    const minutes = time.getMinutes();
-    const hours = time.getHours();
+      let playerData = {};
+      try { playerData = JSON.parse(player.data || "{}"); } catch {}
 
-    const secondDeg = seconds * 6;
-    const minuteDeg = minutes * 6 + seconds * 0.1;
-    const hourDeg = ((hours % 12) / 12) * 360 + minutes * 0.5;
+      if (playerData.challengeBoard && playerData.challengeBoard.length === 16) {
+        boardData = playerData.challengeBoard;
+        marked = playerData.challengeMarked || Array(16).fill(false);
+        evidence = playerData.challengeEvidence || Array(16).fill(null);
+      } else {
+        boardData = challenges.sort(() => 0.5 - Math.random()).slice(0, 16);
+        marked = Array(16).fill(false);
+        evidence = Array(16).fill(null);
+        playerData.challengeBoard = boardData;
+        playerData.challengeMarked = marked;
+        playerData.challengeEvidence = evidence;
+        await putPlayerFields({ data: JSON.stringify(playerData) });
+      }
+      renderBoard();
+    }
 
-    document.getElementById(prefix + "Hour").style.transform = `rotate(${hourDeg}deg)`;
-    document.getElementById(prefix + "Minute").style.transform = `rotate(${minuteDeg}deg)`;
-    document.getElementById(prefix + "Second").style.transform = `rotate(${secondDeg}deg)`;
-  }
+    function renderBoard() {
+      boardElement.innerHTML = "";
+      boardData.forEach((text, i) => {
+        const div = document.createElement("div");
+        const icon = evidence[i]?.type === "photo" ? "📷" : evidence[i]?.type === "text" ? "📝" : "";
+        div.className = "cell" + (marked[i] ? " marked" : "");
+        div.dataset.prooficon = icon;
+        div.textContent = text;
+        div.onclick = () => handleCellClick(i);
+        boardElement.appendChild(div);
+      });
+      updateProgress();
+    }
 
-  setClock(swedenTime, "sweden");
-  setClock(finlandTime, "finland");
-}
+    function updateProgress() {
+      const done = marked.filter(Boolean).length;
+      progressText.textContent = `Du har klarat ${done} av 16 utmaningar`;
+    }
 
-setInterval(updateAnalogClocks, 1000);
-updateAnalogClocks();
+    function goBack() {
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = "play.html?id=" + playerId;
+    }
 
+    // ====== Flow: require proof before marking ======
+    function handleCellClick(index) {
+      if (marked[index]) {
+        // allow unmark with confirmation — removes evidence
+        const ok = confirm("Den här rutan är markerad. Vill du avmarkera och ta bort beviset?");
+        if (!ok) return;
+        marked[index] = false;
+        evidence[index] = null;
+        persist();
+        return;
+      }
+      // Not marked yet — open chooser
+      pendingIndex = index;
+      const task = boardData[index] || "Utmaning";
+      chooserTaskText.textContent = `“${task}” – välj hur du vill lägga till bevis`;
+      openChooser();
+    }
 
-  
+    function openChooser() {
+      chooserBackdrop.style.display = "flex";
+      chooserBackdrop.setAttribute("aria-hidden", "false");
+    }
+    function closeChooser() {
+      chooserBackdrop.style.display = "none";
+      chooserBackdrop.setAttribute("aria-hidden", "true");
+    }
+    function openTextModal() {
+      textBackdrop.style.display = "flex";
+      textBackdrop.setAttribute("aria-hidden", "false");
+      proofText.value = "";
+      const task = boardData[pendingIndex] || "Utmaning";
+      textTaskText.textContent = `Skriv vad du gjort för “${task}”`;
+      proofText.focus();
+    }
+    function closeTextModal() {
+      textBackdrop.style.display = "none";
+      textBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    // Button wiring
+    chooserCancel.addEventListener("click", () => { pendingIndex = null; closeChooser(); });
+    textCancel.addEventListener("click", () => { closeTextModal(); openChooser(); });
+
+    chooseTextBtn.addEventListener("click", () => {
+      closeChooser();
+      openTextModal();
+    });
+
+    choosePhotoBtn.addEventListener("click", () => {
+      closeChooser();
+      // Trigger SAME input as on player page
+      photoInput.value = "";
+      photoInput.click();
+    });
+
+    saveTextProof.addEventListener("click", async () => {
+      const txt = (proofText.value || "").trim();
+      if (!txt) {
+        alert("Skriv något först 🙏");
+        return;
+      }
+      const idx = pendingIndex;
+      if (idx == null) return;
+      evidence[idx] = { type: "text", value: txt, ts: Date.now() };
+      marked[idx] = true;
+      pendingIndex = null;
+      closeTextModal();
+      await persist();
+      alert("Text sparad och rutan markerades!");
+    });
+
+    // ---- Cloudinary upload (same flow as player page) ----
+    async function uploadPhotoToCloudinary(file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", UPLOAD_PRESET);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: "POST", body: formData
+      });
+      const json = await res.json();
+      if (!json.secure_url) throw new Error("Cloudinary upload failed");
+      return json.secure_url;
+    }
+
+    // When the user picks/takes a photo
+    photoInput.addEventListener("change", async function () {
+      const file = this.files && this.files[0];
+      if (!file) return;
+      const idx = pendingIndex;
+      pendingIndex = null;
+
+      try {
+        // 1) Upload to Cloudinary
+        const imageUrl = await uploadPhotoToCloudinary(file);
+
+        // 2) Save as tile evidence and mark tile
+        evidence[idx] = { type: "photo", value: imageUrl, ts: Date.now(), name: file.name };
+        marked[idx] = true;
+
+        // 3) Also add to player's gallery
+        const player = await getPlayerRow();
+        let gallery = [];
+        try { gallery = JSON.parse(player.gallery || "[]"); } catch { gallery = []; }
+        gallery.push(imageUrl);
+
+        // 4) Persist both data + gallery in a single PUT
+        const playerData = {
+          ...(player.data ? JSON.parse(player.data) : {}),
+          challengeBoard: boardData,
+          challengeMarked: marked,
+          challengeEvidence: evidence
+        };
+
+        await putPlayerFields({
+          data: JSON.stringify(playerData),
+          gallery: JSON.stringify(gallery)
+        });
+
+        renderBoard();
+        updateProgress();
+        alert("Bilden har laddats upp och rutan markerades!");
+
+      } catch (err) {
+        console.error(err);
+        alert("Kunde inte ladda upp bilden. Försök igen.");
+      }
+    });
+
+    // Persist helper (when not changing gallery)
+    async function persist() {
+      const player = await getPlayerRow();
+      const playerData = {
+        ...(player.data ? JSON.parse(player.data) : {}),
+        challengeBoard: boardData,
+        challengeMarked: marked,
+        challengeEvidence: evidence
+      };
+      await putPlayerFields({ data: JSON.stringify(playerData) });
+      renderBoard();
+      updateProgress();
+    }
+
+    loadBoard();
   </script>
 </body>
 </html>
-
-
-
-
-
-
