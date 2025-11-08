@@ -5,170 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ingrids Miljonfrågor</title>
   <style>
-    :root{
-      /* Background controls (same idea as play.html) */
-      --bg-zoom: 230%;
-      --bg-pos-x: 50%;
-      --bg-pos-y: 50%;
-
-      /* Quiz card vertical position if you want to nudge it */
-      --quiz-container-top: 55%;
-    }
-
-    /* Page + background */
-    body{
-      margin:0;
-      font-family: Arial, sans-serif;
-      color:#fff;
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow-x:hidden;
-      position:relative;
-      text-rendering: optimizeLegibility;
-      -webkit-font-smoothing: antialiased;
-    }
-    .background{
-      position:fixed; inset:0;
-      background: url("letsboat-bg.png") center center no-repeat;
-      background-size: var(--bg-zoom);
-      background-position: var(--bg-pos-x) var(--bg-pos-y);
-      transition: background-size .3s ease, background-position .3s ease;
-      z-index:-2;
-    }
-    .overlay{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,0.35);
-      z-index:-1;
-    }
-
-    /* Back button (top-right) */
-    .back-btn{
-      position: fixed; top: 15px; right: 15px;
-      background:#0066cc; color:#fff; border:none;
-      padding:8px 14px; border-radius: 999px;
-      font-size: 0.95em; font-weight:700; cursor:pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,.35);
-      transition: background .2s;
-      z-index: 10;
-    }
+    :root{ --bg-zoom:230%; --bg-pos-x:50%; --bg-pos-y:50%; --quiz-container-top:55%; }
+    body{ margin:0; font-family:Arial,sans-serif; color:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center; overflow-x:hidden; position:relative; }
+    .background{ position:fixed; inset:0; background:url("letsboat-bg.png") center no-repeat; background-size:var(--bg-zoom); background-position:var(--bg-pos-x) var(--bg-pos-y); z-index:-2; }
+    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:-1; }
+    .back-btn{ position:fixed; top:15px; right:15px; background:#0066cc; color:#fff; border:none; padding:8px 14px; border-radius:999px; font-weight:700; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.35); z-index:10; }
     .back-btn:hover{ background:#0059b3; }
 
-    /* Container */
-    .quiz-wrap{
-      position:absolute;
-      top: var(--quiz-container-top);
-      left:50%;
-      transform: translate(-50%, -50%);
-      width: min(92vw, 520px);
-      background: rgba(10, 16, 40, 0.5);
-      backdrop-filter: blur(8px);
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.06);
-      overflow:hidden;
-    }
+    .quiz-wrap{ position:absolute; top:var(--quiz-container-top); left:50%; transform:translate(-50%,-50%); width:min(92vw,520px); background:rgba(10,16,40,.5); backdrop-filter:blur(8px); border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.06); overflow:hidden; }
+    .quiz-header{ padding:14px 18px; background:radial-gradient(120% 120% at 50% -10%, #1d2b66 0%, #0b1333 65%, #050a1f 100%); border-bottom:1px solid rgba(255,255,255,.08); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .brand{ font-weight:800; display:flex; gap:8px; align-items:center; }
+    .brand .coin{ width:26px; height:26px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ffe27a, #f5c33b 55%, #c89b13 100%); box-shadow: inset 0 0 8px rgba(0,0,0,.25), 0 0 8px rgba(255,215,0,.35); border:1px solid rgba(0,0,0,.25); }
+    .progress{ font-size:.85em; color:#ffd700; opacity:.9; font-weight:700; }
+    .warn{ padding:12px 14px; font-size:.95em; background:rgba(255,184,0,.18); border-top:1px solid rgba(255,184,0,.35); text-align:center; display:none; }
 
-    /* Millionaire header bar */
-    .quiz-header{
-      padding: 14px 18px;
-      background: radial-gradient(120% 120% at 50% -10%, #1d2b66 0%, #0b1333 65%, #050a1f 100%);
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      display:flex; align-items:center; justify-content:space-between; gap:8px;
-    }
-    .brand{
-      font-weight:800; letter-spacing:.5px;
-      display:flex; align-items:center; gap:8px;
-    }
-    .brand .coin{
-      width:26px; height:26px; border-radius:50%;
-      background: radial-gradient(circle at 30% 30%, #ffe27a, #f5c33b 55%, #c89b13 100%);
-      box-shadow: inset 0 0 8px rgba(0,0,0,.25), 0 0 8px rgba(255,215,0,.35);
-      border:1px solid rgba(0,0,0,.25);
-    }
-    .progress{
-      font-size:.85em; color:#ffd700; opacity:.9;
-      font-weight:700;
-    }
+    .question{ padding:18px 18px 8px; font-size:1.1em; line-height:1.4; text-shadow:0 1px 6px rgba(0,0,0,.35); }
+    .answers{ display:grid; gap:10px; padding:10px 14px 16px; grid-template-columns:1fr; }
+    .answer{ display:flex; align-items:center; gap:10px; border:1px solid rgba(255,255,255,.12); background:rgba(14,20,48,.55); border-radius:12px; padding:12px; color:#fff; cursor:pointer; user-select:none; box-shadow:0 2px 10px rgba(0,0,0,.25); transition:transform .07s, background .2s, border-color .2s, box-shadow .2s; }
+    .answer:hover{ background:rgba(22,36,88,.65); border-color:rgba(108,99,255,.6); box-shadow:0 4px 16px rgba(108,99,255,.25); }
+    .answer:active{ transform:scale(.98); }
+    .badge{ min-width:34px; height:34px; border-radius:999px; display:grid; place-items:center; font-weight:800; background:linear-gradient(145deg,#1e3fa5,#0d1f66); border:1px solid rgba(255,255,255,.15); box-shadow: inset 0 0 10px rgba(255,255,255,.08), 0 0 10px rgba(0,0,0,.35); }
+    .answered{ outline:2px solid rgba(0,123,255,.7); background:rgba(0,123,255,.18); border-color:rgba(0,123,255,.5); }
 
-    /* Question block */
-    .question{
-      padding: 18px 18px 8px;
-      font-size:1.1em; line-height:1.4;
-      text-shadow: 0 1px 6px rgba(0,0,0,.35);
-    }
-
-    /* Answer buttons */
-    .answers{
-      display:grid; gap:10px; padding: 10px 14px 16px;
-      grid-template-columns: 1fr; /* stacked on mobile */
-    }
-    .answer{
-      display:flex; align-items:center; gap:10px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(14, 20, 48, 0.55);
-      border-radius: 12px;
-      padding: 12px 12px;
-      color:#fff; cursor:pointer; user-select:none;
-      box-shadow: 0 2px 10px rgba(0,0,0,.25);
-      transition: transform .07s ease, background .2s ease, border-color .2s ease, box-shadow .2s;
-      position: relative;
-      overflow: hidden;
-    }
-    .answer:hover{
-      background: rgba(22, 36, 88, 0.65);
-      border-color: rgba(108,99,255,.6);
-      box-shadow: 0 4px 16px rgba(108,99,255,.25);
-    }
-    .answer:active{ transform: scale(0.98); }
-    .badge{
-      min-width: 34px; height: 34px; border-radius: 999px;
-      display:grid; place-items:center; font-weight:800;
-      background: linear-gradient(145deg, #1e3fa5, #0d1f66);
-      border:1px solid rgba(255,255,255,.15);
-      box-shadow: inset 0 0 10px rgba(255,255,255,.08), 0 0 10px rgba(0,0,0,.35);
-    }
-    .answered{
-      outline: 2px solid rgba(0, 123, 255, .7);
-      background: rgba(0, 123, 255, .18);
-      border-color: rgba(0, 123, 255, .5);
-    }
-
-    /* Footer controls */
-    .quiz-footer{
-      display:flex; justify-content:space-between; align-items:center;
-      padding: 12px 14px 16px;
-      border-top:1px solid rgba(255,255,255,.06);
-      background: rgba(6,10,26,.4);
-    }
+    .quiz-footer{ display:flex; justify-content:space-between; align-items:center; padding:12px 14px 16px; border-top:1px solid rgba(255,255,255,.06); background:rgba(6,10,26,.4); }
     .meta{ font-size:.9em; opacity:.85; }
-    .next-btn{
-      background:#0066cc; color:#fff; border:none;
-      font-weight:800; letter-spacing:.2px;
-      padding:10px 16px; border-radius:10px; cursor:pointer;
-      box-shadow: 0 2px 10px rgba(0,0,0,.35);
-      transition: background .2s, transform .07s;
-    }
-    .next-btn:disabled{
-      opacity:.5; cursor:not-allowed; filter: grayscale(.1);
-    }
+    .next-btn{ background:#0066cc; color:#fff; border:none; font-weight:800; padding:10px 16px; border-radius:10px; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.35); transition:background .2s, transform .07s; }
+    .next-btn:disabled{ opacity:.5; cursor:not-allowed; filter:grayscale(.1); }
     .next-btn:hover:not(:disabled){ background:#0059b3; }
-    .next-btn:active:not(:disabled){ transform: scale(.98); }
+    .next-btn:active:not(:disabled){ transform:scale(.98); }
 
-    /* End screen */
-    .end-screen{
-      padding: 24px 18px 26px; text-align:center;
-    }
-    .end-title{
-      font-size:1.4em; margin-bottom:8px; font-weight:800;
-      text-shadow: 0 1px 6px rgba(0,0,0,.35);
-    }
+    .end-screen{ padding:24px 18px 26px; text-align:center; }
+    .end-title{ font-size:1.4em; margin-bottom:8px; font-weight:800; text-shadow:0 1px 6px rgba(0,0,0,.35); }
     .end-sub{ opacity:.9; margin-bottom:14px; }
-    .primary{
-      background:#0066cc; color:#fff; border:none; font-weight:800;
-      padding:12px 16px; border-radius:10px; cursor:pointer;
-      box-shadow: 0 2px 10px rgba(0,0,0,.35);
-    }
+    .primary{ background:#0066cc; color:#fff; border:none; font-weight:800; padding:12px 16px; border-radius:10px; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.35); }
   </style>
 </head>
 <body>
@@ -183,11 +52,10 @@
       <div class="progress" id="progressText">Fråga –</div>
     </div>
 
-    <div class="question" id="questionText">Laddar fråga…</div>
+    <div id="warn" class="warn"></div>
 
-    <div class="answers" id="answers">
-      <!-- answers injected here -->
-    </div>
+    <div class="question" id="questionText">Laddar fråga…</div>
+    <div class="answers" id="answers"></div>
 
     <div class="quiz-footer">
       <div class="meta" id="metaText">Välj ett alternativ</div>
@@ -197,11 +65,14 @@
 
   <div class="quiz-wrap end-screen" id="endScreen" style="display:none">
     <div class="end-title">Tack för att du spelade! 🎉</div>
-    <div class="end-sub">Dina svar är sparade. Rätt svar avslöjas vid genomgången i slutet av eventet.</div>
+    <div class="end-sub">Dina svar är sparade.</div>
     <button class="primary" onclick="toPlay()">Tillbaka till din sida</button>
   </div>
 
   <script>
+    // --- Config ---
+    const REQUIRED_COUNT = 14;
+
     // --- Endpoints ---
     const PLAYERS_API = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
     const QUIZ_API    = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/quizQuestions";
@@ -211,79 +82,100 @@
     const playerId = params.get("id");
 
     // --- State ---
-    let questions = [];              // raw from Sheety
-    let quizOrder = [];              // array of question IDs in the order shown
-    let currentIndex = 0;            // 0-based index into quizOrder
-    let answersMap = {};             // { [questionId]: "A" | "B" | "C" | "D" }
-    let playerData = {};             // parsed player.data
+    let questions = [];     // the EXACT 14 questions used
+    let quizOrder = [];     // array of question IDs in the order shown
+    let currentIndex = 0;   // 0-based index into quizOrder
+    let answersMap = {};    // { [questionId]: "A" | "B" | "C" | "D" }
+    let playerData = {};    // parsed player.data
 
-    // --- Utilities ---
+    // --- Utils ---
     const byId = (id) => document.getElementById(id);
     const shuffle = (arr) => arr.map(v=>[Math.random(), v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
 
-    function goBack(){
-      if (history.length > 1) history.back();
-      else window.location.href = "index.html";
-    }
-    function toPlay(){
-      window.location.href = "play.html?id=" + encodeURIComponent(playerId);
+    function goBack(){ if (history.length > 1) history.back(); else window.location.href = "index.html"; }
+    function toPlay(){ window.location.href = "play.html?id=" + encodeURIComponent(playerId); }
+
+    function normalizeRows(rawList){
+      const nonEmpty = (rawList || []).filter(r => (r.question || "").trim().length > 0);
+      return nonEmpty.map((r, idx) => ({
+        id: (typeof r.id === "number" ? r.id : idx + 1),
+        question: r.question ?? "",
+        optionA: r.optionA ?? "",
+        optionB: r.optionB ?? "",
+        optionC: r.optionC ?? "",
+        optionD: r.optionD ?? ""
+      }));
     }
 
-    // --- Load questions + player state ---
+    function pickExactlyFourteen(rows){
+      let work = normalizeRows(rows);
+      const warnEl = byId("warn"); warnEl.style.display = "none"; warnEl.textContent = "";
+
+      if (work.length === 0){
+        warnEl.textContent = "Inga quizfrågor hittades i Sheety.";
+        warnEl.style.display = "block";
+        return [];
+      }
+
+      work = shuffle(work);
+      if (work.length < REQUIRED_COUNT){
+        warnEl.textContent = `OBS: Hittade bara ${work.length} fråga${work.length===1?"":"or"} i Sheety. Lägg till fler (totalt ${REQUIRED_COUNT}).`;
+        warnEl.style.display = "block";
+        return work;
+      }
+      return work.slice(0, REQUIRED_COUNT);
+    }
+
     async function initQuiz(){
       try {
-        // Load questions
+        // Fetch questions
         const qRes = await fetch(QUIZ_API);
         const qJson = await qRes.json();
-        const qKey = Object.keys(qJson)[0]; // likely "quizQuestions"
-        questions = qJson[qKey] || [];
+        const qKey = Object.keys(qJson)[0]; // "quizQuestions"
+        questions = pickExactlyFourteen(qJson[qKey] || []);
+        byId("quizWrap").style.display = "block";
 
         if (!questions.length){
           byId("questionText").textContent = "Inga quizfrågor hittades.";
           byId("metaText").textContent = "Kontakta arrangören.";
-          byId("quizWrap").style.display = "block";
           return;
         }
 
         // Load player row
         const pRes = await fetch(`${PLAYERS_API}/${playerId}`);
         const pJson = await pRes.json();
-        const pKey = Object.keys(pJson)[0]; // likely "blad1"
+        const pKey = Object.keys(pJson)[0]; // "blad1"
         const playerRow = pJson[pKey];
 
         try { playerData = JSON.parse(playerRow.data || "{}"); }
         catch { playerData = {}; }
 
-        // Restore persisted order & answers if present
+        const idsOfCurrentSet = new Set(questions.map(q => q.id));
         if (Array.isArray(playerData.quizOrder) && playerData.quizOrder.length){
-          quizOrder = playerData.quizOrder.filter(id =>
-            questions.some(q => q.id === id)
-          );
+          quizOrder = playerData.quizOrder.filter(id => idsOfCurrentSet.has(id));
+          if (quizOrder.length !== Math.min(REQUIRED_COUNT, questions.length)){
+            quizOrder = shuffle(questions.map(q => q.id)).slice(0, REQUIRED_COUNT);
+            playerData.quizOrder = quizOrder;
+            await persistPlayerData();
+          }
         } else {
-          // Create a randomized order (by question id)
-          quizOrder = shuffle(questions.map(q => q.id));
+          quizOrder = shuffle(questions.map(q => q.id)).slice(0, REQUIRED_COUNT);
           playerData.quizOrder = quizOrder;
           await persistPlayerData();
         }
 
-        // Restore answers
         if (Array.isArray(playerData.quizAnswers)){
           answersMap = {};
-          playerData.quizAnswers.forEach(entry => {
-            answersMap[entry.questionId] = entry.answer;
-          });
+          playerData.quizAnswers.forEach(entry => { answersMap[entry.questionId] = entry.answer; });
         } else {
           answersMap = {};
         }
 
-        // Restore index (resume)
         currentIndex = Math.max(0, Math.min(
           Number.isInteger(playerData.quizIndex) ? playerData.quizIndex : 0,
           quizOrder.length - 1
         ));
 
-        // Show UI
-        byId("quizWrap").style.display = "block";
         renderQuestion();
       } catch (e){
         console.error(e);
@@ -291,22 +183,20 @@
       }
     }
 
-    function getQuestionById(id){
-      return questions.find(q => q.id === id);
-    }
+    function getQuestionById(id){ return questions.find(q => q.id === id); }
 
     function renderQuestion(){
+      const total = quizOrder.length;
       const qId = quizOrder[currentIndex];
       const q = getQuestionById(qId);
       if (!q){ return endQuiz(); }
 
-      // Texts
-      byId("progressText").textContent = `Fråga ${currentIndex+1} av ${quizOrder.length}`;
+      byId("progressText").textContent = `Fråga ${currentIndex+1} av ${total}`;
       byId("questionText").textContent = q.question || "Fråga saknas";
 
-      // Build answers
       const answersEl = byId("answers");
       answersEl.innerHTML = "";
+
       const opts = [
         { key:"A", text:q.optionA },
         { key:"B", text:q.optionB },
@@ -314,52 +204,43 @@
         { key:"D", text:q.optionD },
       ];
 
-      const previously = answersMap[qId]; // already selected?
+      const previously = answersMap[qId];
 
       opts.forEach(opt => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "answer" + (previously === opt.key ? " answered" : "");
         btn.dataset.key = opt.key;
-        btn.innerHTML = `
-          <span class="badge">${opt.key}</span>
-          <span>${opt.text || ""}</span>
-        `;
+        btn.innerHTML = `<span class="badge">${opt.key}</span><span>${opt.text || ""}</span>`;
         btn.onclick = () => selectAnswer(qId, opt.key, btn);
         answersEl.appendChild(btn);
       });
 
-      // Footer
       byId("metaText").textContent = previously ? "Svar valt. Du kan gå vidare." : "Välj ett alternativ";
       byId("nextBtn").disabled = !previously;
     }
 
     async function selectAnswer(questionId, key, btn){
-      // Mark selected in UI
       const container = byId("answers");
       [...container.querySelectorAll(".answer")].forEach(b => b.classList.remove("answered"));
       btn.classList.add("answered");
 
-      // Save locally
       answersMap[questionId] = key;
       byId("metaText").textContent = "Svar valt. Du kan gå vidare.";
       byId("nextBtn").disabled = false;
 
-      // Persist to Sheety (quizAnswers array of {questionId, answer})
       playerData.quizAnswers = Object.entries(answersMap).map(([qid, ans]) => ({
         questionId: Number(qid),
         answer: ans
       }));
-      playerData.quizIndex = currentIndex; // persist position too
+      playerData.quizIndex = currentIndex;
       await persistPlayerData();
     }
 
     byId("nextBtn").addEventListener("click", async () => {
-      // Require an answer (safety)
       const qId = quizOrder[currentIndex];
       if (!answersMap[qId]) return;
 
-      // Move on
       if (currentIndex < quizOrder.length - 1){
         currentIndex++;
         playerData.quizIndex = currentIndex;
@@ -387,7 +268,6 @@
       byId("endScreen").style.display = "block";
     }
 
-    // Kickoff
     initQuiz();
   </script>
 </body>
