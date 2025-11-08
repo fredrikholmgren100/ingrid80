@@ -46,6 +46,7 @@
 
   <button class="back-btn" onclick="goBack()">⟵ Tillbaka</button>
 
+  <!-- Normal quiz view -->
   <div class="quiz-wrap" id="quizWrap" style="display:none">
     <div class="quiz-header">
       <div class="brand"><div class="coin"></div> Ingrids Miljonfrågor</div>
@@ -63,209 +64,153 @@
     </div>
   </div>
 
+  <!-- End screen -->
   <div class="quiz-wrap end-screen" id="endScreen" style="display:none">
     <div class="end-title">Tack för att du spelade! 🎉</div>
     <div class="end-sub">Dina svar är sparade.</div>
     <button class="primary" onclick="toPlay()">Tillbaka till din sida</button>
   </div>
 
-  <script>
-    // --- Config ---
-    const REQUIRED_COUNT = 14;
+  <!-- Already completed screen -->
+  <div class="quiz-wrap end-screen" id="doneScreen" style="display:none">
+    <div class="end-title">Du har redan slutfört quizet 🎉</div>
+    <div class="end-sub">Dina svar är sparade sedan tidigare.</div>
+    <button class="primary" onclick="toPlay()">Tillbaka till din sida</button>
+  </div>
 
-    // --- Endpoints ---
+  <script>
+    const REQUIRED_COUNT = 14;
     const PLAYERS_API = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
     const QUIZ_API    = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/quizQuestions";
 
-    // --- Context ---
     const params = new URLSearchParams(window.location.search);
     const playerId = params.get("id");
 
-    // --- State ---
-    let questions = [];     // the EXACT 14 questions used
-    let quizOrder = [];     // array of question IDs in the order shown
-    let currentIndex = 0;   // 0-based index into quizOrder
-    let answersMap = {};    // { [questionId]: "A" | "B" | "C" | "D" }
-    let playerData = {};    // parsed player.data
+    let questions = [], quizOrder = [], currentIndex = 0;
+    let answersMap = {}, playerData = {};
 
-    // --- Utils ---
     const byId = (id) => document.getElementById(id);
-    const shuffle = (arr) => arr.map(v=>[Math.random(), v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+    const shuffle = (arr) => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
 
     function goBack(){ if (history.length > 1) history.back(); else window.location.href = "index.html"; }
     function toPlay(){ window.location.href = "play.html?id=" + encodeURIComponent(playerId); }
 
-    function normalizeRows(rawList){
-      const nonEmpty = (rawList || []).filter(r => (r.question || "").trim().length > 0);
-      return nonEmpty.map((r, idx) => ({
-        id: (typeof r.id === "number" ? r.id : idx + 1),
-        question: r.question ?? "",
-        optionA: r.optionA ?? "",
-        optionB: r.optionB ?? "",
-        optionC: r.optionC ?? "",
-        optionD: r.optionD ?? ""
+    function normalizeRows(raw){
+      return (raw||[]).filter(r => (r.question||"").trim()).map((r,i)=>({
+        id: typeof r.id==="number"?r.id:i+1,
+        question:r.question, optionA:r.optionA||"", optionB:r.optionB||"",
+        optionC:r.optionC||"", optionD:r.optionD||""
       }));
     }
 
-    function pickExactlyFourteen(rows){
-      let work = normalizeRows(rows);
-      const warnEl = byId("warn"); warnEl.style.display = "none"; warnEl.textContent = "";
-
-      if (work.length === 0){
-        warnEl.textContent = "Inga quizfrågor hittades i Sheety.";
-        warnEl.style.display = "block";
-        return [];
-      }
-
-      work = shuffle(work);
-      if (work.length < REQUIRED_COUNT){
-        warnEl.textContent = `OBS: Hittade bara ${work.length} fråga${work.length===1?"":"or"} i Sheety. Lägg till fler (totalt ${REQUIRED_COUNT}).`;
-        warnEl.style.display = "block";
-        return work;
-      }
-      return work.slice(0, REQUIRED_COUNT);
+    function pick14(rows){
+      const all = normalizeRows(rows);
+      if (all.length<=14) return all;
+      return shuffle(all).slice(0,14);
     }
 
     async function initQuiz(){
-      try {
-        // Fetch questions
+      try{
         const qRes = await fetch(QUIZ_API);
         const qJson = await qRes.json();
-        const qKey = Object.keys(qJson)[0]; // "quizQuestions"
-        questions = pickExactlyFourteen(qJson[qKey] || []);
-        byId("quizWrap").style.display = "block";
+        const qKey = Object.keys(qJson)[0];
+        questions = pick14(qJson[qKey]||[]);
 
-        if (!questions.length){
-          byId("questionText").textContent = "Inga quizfrågor hittades.";
-          byId("metaText").textContent = "Kontakta arrangören.";
+        const pRes = await fetch(`${PLAYERS_API}/${playerId}`);
+        const pJson = await pRes.json();
+        const pKey = Object.keys(pJson)[0];
+        const row = pJson[pKey];
+
+        try{ playerData = JSON.parse(row.data||"{}"); }catch{ playerData={}; }
+
+        // Restore or create order
+        const ids = new Set(questions.map(q=>q.id));
+        if(Array.isArray(playerData.quizOrder)&&playerData.quizOrder.length){
+          quizOrder = playerData.quizOrder.filter(id=>ids.has(id));
+        } else {
+          quizOrder = shuffle(questions.map(q=>q.id)).slice(0,REQUIRED_COUNT);
+          playerData.quizOrder = quizOrder;
+          await persist();
+        }
+
+        // Restore answers
+        if(Array.isArray(playerData.quizAnswers)){
+          playerData.quizAnswers.forEach(e=>answersMap[e.questionId]=e.answer);
+        }
+
+        const answeredCount = Object.keys(answersMap).length;
+        if(answeredCount >= quizOrder.length){
+          // already completed
+          byId("doneScreen").style.display="block";
           return;
         }
 
-        // Load player row
-        const pRes = await fetch(`${PLAYERS_API}/${playerId}`);
-        const pJson = await pRes.json();
-        const pKey = Object.keys(pJson)[0]; // "blad1"
-        const playerRow = pJson[pKey];
-
-        try { playerData = JSON.parse(playerRow.data || "{}"); }
-        catch { playerData = {}; }
-
-        const idsOfCurrentSet = new Set(questions.map(q => q.id));
-        if (Array.isArray(playerData.quizOrder) && playerData.quizOrder.length){
-          quizOrder = playerData.quizOrder.filter(id => idsOfCurrentSet.has(id));
-          if (quizOrder.length !== Math.min(REQUIRED_COUNT, questions.length)){
-            quizOrder = shuffle(questions.map(q => q.id)).slice(0, REQUIRED_COUNT);
-            playerData.quizOrder = quizOrder;
-            await persistPlayerData();
-          }
-        } else {
-          quizOrder = shuffle(questions.map(q => q.id)).slice(0, REQUIRED_COUNT);
-          playerData.quizOrder = quizOrder;
-          await persistPlayerData();
-        }
-
-        if (Array.isArray(playerData.quizAnswers)){
-          answersMap = {};
-          playerData.quizAnswers.forEach(entry => { answersMap[entry.questionId] = entry.answer; });
-        } else {
-          answersMap = {};
-        }
-
-        currentIndex = Math.max(0, Math.min(
-          Number.isInteger(playerData.quizIndex) ? playerData.quizIndex : 0,
-          quizOrder.length - 1
-        ));
-
-        renderQuestion();
-      } catch (e){
-        console.error(e);
-        alert("Kunde inte ladda quizet. Försök igen.");
-      }
+        currentIndex = playerData.quizIndex || 0;
+        byId("quizWrap").style.display="block";
+        render();
+      }catch(e){ console.error(e); alert("Kunde inte ladda quizet."); }
     }
 
-    function getQuestionById(id){ return questions.find(q => q.id === id); }
+    function getQ(id){ return questions.find(q=>q.id===id); }
 
-    function renderQuestion(){
-      const total = quizOrder.length;
+    function render(){
       const qId = quizOrder[currentIndex];
-      const q = getQuestionById(qId);
-      if (!q){ return endQuiz(); }
+      const q = getQ(qId);
+      if(!q) return endQuiz();
 
-      byId("progressText").textContent = `Fråga ${currentIndex+1} av ${total}`;
-      byId("questionText").textContent = q.question || "Fråga saknas";
+      byId("progressText").textContent=`Fråga ${currentIndex+1} av ${quizOrder.length}`;
+      byId("questionText").textContent=q.question;
 
       const answersEl = byId("answers");
-      answersEl.innerHTML = "";
+      answersEl.innerHTML="";
+      const opts=[{key:"A",text:q.optionA},{key:"B",text:q.optionB},{key:"C",text:q.optionC},{key:"D",text:q.optionD}];
+      const prev=answersMap[qId];
 
-      const opts = [
-        { key:"A", text:q.optionA },
-        { key:"B", text:q.optionB },
-        { key:"C", text:q.optionC },
-        { key:"D", text:q.optionD },
-      ];
-
-      const previously = answersMap[qId];
-
-      opts.forEach(opt => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "answer" + (previously === opt.key ? " answered" : "");
-        btn.dataset.key = opt.key;
-        btn.innerHTML = `<span class="badge">${opt.key}</span><span>${opt.text || ""}</span>`;
-        btn.onclick = () => selectAnswer(qId, opt.key, btn);
+      opts.forEach(opt=>{
+        const btn=document.createElement("button");
+        btn.className="answer"+(prev===opt.key?" answered":"");
+        btn.innerHTML=`<span class="badge">${opt.key}</span><span>${opt.text}</span>`;
+        btn.onclick=()=>select(qId,opt.key,btn);
         answersEl.appendChild(btn);
       });
 
-      byId("metaText").textContent = previously ? "Svar valt. Du kan gå vidare." : "Välj ett alternativ";
-      byId("nextBtn").disabled = !previously;
+      byId("metaText").textContent=prev?"Svar valt. Du kan gå vidare.":"Välj ett alternativ";
+      byId("nextBtn").disabled=!prev;
     }
 
-    async function selectAnswer(questionId, key, btn){
-      const container = byId("answers");
-      [...container.querySelectorAll(".answer")].forEach(b => b.classList.remove("answered"));
+    async function select(id,key,btn){
+      [...byId("answers").children].forEach(b=>b.classList.remove("answered"));
       btn.classList.add("answered");
+      answersMap[id]=key;
+      byId("metaText").textContent="Svar valt. Du kan gå vidare.";
+      byId("nextBtn").disabled=false;
 
-      answersMap[questionId] = key;
-      byId("metaText").textContent = "Svar valt. Du kan gå vidare.";
-      byId("nextBtn").disabled = false;
-
-      playerData.quizAnswers = Object.entries(answersMap).map(([qid, ans]) => ({
-        questionId: Number(qid),
-        answer: ans
-      }));
-      playerData.quizIndex = currentIndex;
-      await persistPlayerData();
+      playerData.quizAnswers = Object.entries(answersMap).map(([qid,ans])=>({questionId:Number(qid),answer:ans}));
+      playerData.quizIndex=currentIndex;
+      await persist();
     }
 
-    byId("nextBtn").addEventListener("click", async () => {
-      const qId = quizOrder[currentIndex];
-      if (!answersMap[qId]) return;
-
-      if (currentIndex < quizOrder.length - 1){
+    byId("nextBtn").addEventListener("click",async()=>{
+      const qId=quizOrder[currentIndex];
+      if(!answersMap[qId])return;
+      if(currentIndex<quizOrder.length-1){
         currentIndex++;
-        playerData.quizIndex = currentIndex;
-        await persistPlayerData();
-        renderQuestion();
-      } else {
-        endQuiz();
-      }
+        playerData.quizIndex=currentIndex;
+        await persist();
+        render();
+      }else endQuiz();
     });
 
-    async function persistPlayerData(){
-      try{
-        await fetch(`${PLAYERS_API}/${playerId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ blad1: { data: JSON.stringify(playerData) } })
-        });
-      } catch(e){
-        console.error("Kunde inte spara speldata:", e);
-      }
+    async function persist(){
+      await fetch(`${PLAYERS_API}/${playerId}`,{
+        method:"PUT",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({blad1:{data:JSON.stringify(playerData)}})
+      });
     }
 
     function endQuiz(){
-      byId("quizWrap").style.display = "none";
-      byId("endScreen").style.display = "block";
+      byId("quizWrap").style.display="none";
+      byId("endScreen").style.display="block";
     }
 
     initQuiz();
