@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingrid 80 — Event Dashboard</title>
+  <style>
+    :root {
+      --accent: #6C63FF;
+      --gold: #FFD700;
+      --bg-zoom: 180%;
+      --bg-pos-x: 50%;
+      --bg-pos-y: 50%;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #1d1f27;
+      color: #fff;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    .background {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: url("letsboat-bg.png") center center no-repeat;
+      background-size: var(--bg-zoom);
+      background-position: var(--bg-pos-x) var(--bg-pos-y);
+      filter: brightness(0.6) blur(4px);
+      z-index: -1;
+    }
+    header {
+      text-align: center;
+      padding: 25px;
+      font-size: 2em;
+      font-weight: bold;
+      color: var(--gold);
+      letter-spacing: 1px;
+      position: relative;
+    }
+    .refresh {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .refresh:hover {
+      background: #5850f0;
+    }
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      background: rgba(42,45,56,0.65);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.4);
+    }
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      text-align: center;
+      gap: 10px;
+    }
+    .stat {
+      background: rgba(0,0,0,0.25);
+      padding: 15px 25px;
+      border-radius: 12px;
+      margin: 10px;
+      min-width: 150px;
+      font-size: 1.1em;
+    }
+    .leaderboard {
+      margin-top: 20px;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .leaderboard th, .leaderboard td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .leaderboard th {
+      background: rgba(255,255,255,0.1);
+      color: var(--gold);
+    }
+    .leaderboard tr:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    .player-row {
+      cursor: pointer;
+    }
+    .player-row:hover {
+      background: rgba(108, 99, 255, 0.2);
+    }
+    .rank {
+      text-align: center;
+      font-weight: bold;
+    }
+    .total-cell {
+      font-weight: bold;
+    }
+    .total-gold   { color: gold; }
+    .total-silver { color: silver; }
+    .total-bronze { color: #cd7f32; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75em;
+      margin-left: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.3);
+    }
+    .pill-done {
+      background: rgba(0,200,83,0.2);
+      border-color: rgba(0,230,118,0.9);
+      color: #b9ffcf;
+    }
+    .pill-partial {
+      background: rgba(255,193,7,0.2);
+      border-color: rgba(255,214,0,0.9);
+      color: #ffeaa7;
+    }
+    .pill-none {
+      background: rgba(244,67,54,0.2);
+      border-color: rgba(244,67,54,0.9);
+      color: #ffcdd2;
+    }
+
+    .loading, .error {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.95em;
+    }
+    .error {
+      color: #ff7373;
+    }
+
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      color: #ccc;
+      font-size: 0.9em;
+    }
+
+    /* --- Modal for player details --- */
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      z-index: 1000;
+    }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+    }
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(1000px, 95vw);
+      max-height: 85vh;
+      background: rgba(20,23,35,0.96);
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+      padding: 18px 22px 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .modal-title {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: var(--gold);
+    }
+    .modal-close {
+      background: transparent;
+      color: #fff;
+      border: none;
+      font-size: 1.3em;
+      cursor: pointer;
+    }
+    .modal-body {
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .modal-section-title {
+      margin-top: 10px;
+      margin-bottom: 5px;
+      font-size: 1.05em;
+      color: #ffd700;
+    }
+    .summary-line {
+      font-size: 0.95em;
+      color: #ddd;
+      margin-bottom: 6px;
+    }
+
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+      margin-bottom: 12px;
+    }
+    .detail-table th,
+    .detail-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      vertical-align: top;
+    }
+    .detail-table th {
+      background: rgba(255,255,255,0.08);
+    }
+    .answer-correct {
+      color: #b9ffcf;
+      font-weight: bold;
+    }
+    .answer-wrong {
+      color: #ffb3b3;
+      font-weight: bold;
+    }
+    .badge-small {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 0.75em;
+      margin-left: 4px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.3);
+    }
+    .badge-ok {
+      border-color: #00e676;
+      color: #b9ffcf;
+      background: rgba(0,200,83,0.2);
+    }
+    .badge-fail {
+      border-color: #ff5252;
+      color: #ffcdd2;
+      background: rgba(244,67,54,0.2);
+    }
+    .evidence-link {
+      color: #90caf9;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="background"></div>
+  <header>
+    Ingrid 80 — Event Dashboard
+    <button class="refresh" onclick="loadData()">🔁 Uppdatera</button>
+  </header>
+
+  <div class="container">
+    <div class="stats">
+      <div class="stat" id="totalPlayers">👥 Spelare: --</div>
+      <div class="stat" id="totalPhotos">📸 Bilder: --</div>
+      <div class="stat" id="totalQuiz">❓ Rätt på quiz: --</div>
+      <div class="stat" id="totalLocations">🌍 Rätt platser: --</div>
+      <div class="stat" id="totalChallenges">🧩 Godkända utmaningar: --</div>
+    </div>
+
+    <h2 style="color:var(--gold);">🏆 Ledartavla</h2>
+    <div class="loading" id="loading">Laddar data…</div>
+    <div class="error" id="error" style="display:none;"></div>
+
+    <table class="leaderboard" id="leaderboard" style="display:none;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Namn</th>
+          <th>Bilder</th>
+          <th>Quiz</th>
+          <th>Plats</th>
+          <th>Utmaningar</th>
+          <th>Totalt</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <footer>
+    Tack för att du firade Ingrid! 🎉  
+    <br>Eventet avslutades kl. 23:59 den 10 oktober.
+  </footer>
+
+  <!-- Modal with deep dive -->
+  <div class="modal" id="playerModal">
+    <div class="modal-backdrop" onclick="closePlayerModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="modalPlayerName">Spelare</div>
+        <button class="modal-close" onclick="closePlayerModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="summary-line" id="modalSummary"></div>
+
+        <div class="modal-section-title">❓ Quiz-svar</div>
+        <table class="detail-table" id="modalQuizTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fråga</th>
+              <th>Ditt svar</th>
+              <th>Rätt svar</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="modal-section-title">🌍 Gissa plats</div>
+        <table class="detail-table" id="modalLocationTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Plats</th>
+              <th>Din gissning</th>
+              <th>Resultat</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="modal-section-title">🧩 Utmaningar</div>
+        <table class="detail-table" id="modalChallengeTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Utmaning</th>
+              <th>Status</th>
+              <th>Bevis</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const API_URL  = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+  const QUIZ_API = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/quizQuestions";
+
+  // Samma antal platser som i Gissa Orten-spelet
+  const LOCATION_COUNT = 5;
+  const LOCATION_META = [
+    { label: "Surahammar" },
+    { label: "Örnsköldsvik" },
+    { label: "Västerås" },
+    { label: "Kalix" },
+    { label: "Bräcke" }
+  ];
+
+  let questionMap   = {};   // questionId -> question row
+  let correctMap    = {};   // questionId -> correct letter
+  let playerDetails = [];   // all processed players
+
+  function letterToText(q, letter) {
+    if (!q) return "";
+    switch (letter) {
+      case "A": return q.optionA;
+      case "B": return q.optionB;
+      case "C": return q.optionC;
+      case "D": return q.optionD;
+      default:  return "";
+    }
+  }
+
+  async function loadData() {
+    const loadingEl = document.getElementById("loading");
+    const errorEl   = document.getElementById("error");
+    const tableEl   = document.getElementById("leaderboard");
+    const tbody     = tableEl.querySelector("tbody");
+
+    loadingEl.style.display = "block";
+    errorEl.style.display   = "none";
+    tableEl.style.display   = "none";
+    tbody.innerHTML         = "";
+    playerDetails = [];
+    questionMap   = {};
+    correctMap    = {};
+
+    try {
+      // Hämta spelare + quizfrågor parallellt
+      const [playersRes, quizRes] = await Promise.all([
+        fetch(API_URL),
+        fetch(QUIZ_API)
+      ]);
+
+      if (!playersRes.ok) throw new Error("Spelare: HTTP " + playersRes.status);
+      if (!quizRes.ok)    throw new Error("Quiz: HTTP " + quizRes.status);
+
+      const playersJson = await playersRes.json();
+      const quizJson    = await quizRes.json();
+
+      const playersKey = Object.keys(playersJson)[0];
+      const quizKey    = Object.keys(quizJson)[0];
+
+      const players  = playersJson[playersKey];
+      const quizRows = quizJson[quizKey];
+
+      if (!players)  throw new Error("Inga spelare hittades");
+      if (!quizRows) throw new Error("Inga quizfrågor hittades");
+
+      // Map: fråga -> rad + korrekt bokstav
+      quizRows.forEach(row => {
+        if (!row) return;
+        const id = row.id;
+        if (!id) return;
+        questionMap[id] = row;
+
+        const correctText = row.correct;
+        let letter = null;
+        if (correctText === row.optionA)      letter = "A";
+        else if (correctText === row.optionB) letter = "B";
+        else if (correctText === row.optionC) letter = "C";
+        else if (correctText === row.optionD) letter = "D";
+        if (letter) correctMap[id] = letter;
+      });
+
+      let totalPhotos           = 0;
+      let totalQuizCorrect      = 0;
+      let totalLocationsCorrect = 0;
+      let totalChallengesDone   = 0; // godkända (=approved)
+
+      let results = [];
+
+      players.forEach(p => {
+        let photos = 0;
+
+        // --- Bilder (gallery) – endast för statistik, inte poäng ---
+        if (p.gallery) {
+          try {
+            const parsed = JSON.parse(p.gallery);
+            if (Array.isArray(parsed)) photos = parsed.length;
+            else photos = 1;
+          } catch {
+            photos = 1;
+          }
+        }
+
+        // --- Datafält ---
+        let pdata = {};
+        try { pdata = JSON.parse(p.data || "{}"); } catch {}
+
+        const quizAnswersRaw = Array.isArray(pdata.quizAnswers) ? pdata.quizAnswers : [];
+        const quizOrder      = Array.isArray(pdata.quizOrder) ? pdata.quizOrder : [];
+
+        const challengeBoard    = Array.isArray(pdata.challengeBoard) ? pdata.challengeBoard : [];
+        const challengeMarked   = Array.isArray(pdata.challengeMarked) ? pdata.challengeMarked : [];
+        let   challengeApproved = Array.isArray(pdata.challengeApproved) ? pdata.challengeApproved : [];
+        const challengeEvidence = Array.isArray(pdata.challengeEvidence) ? pdata.challengeEvidence : [];
+
+        // Gissa Orten
+        const guessLoc   = pdata.guessLocation || {};
+        const locResults = Array.isArray(guessLoc.results) ? guessLoc.results : [];
+        const locAnswers = Array.isArray(guessLoc.answers) ? guessLoc.answers : [];
+        const locationCorrect = locResults.filter(Boolean).length;
+        const locationTotal   = LOCATION_COUNT;
+
+        // se till att approved-arrayen har rätt längd
+        const maxChallengesBase = Math.max(
+          challengeBoard.length,
+          challengeMarked.length,
+          challengeApproved.length
+        );
+        if (maxChallengesBase > challengeApproved.length) {
+          challengeApproved = Array.from({ length: maxChallengesBase },
+            (_, i) => challengeApproved[i] || false
+          );
+        }
+        pdata.challengeApproved = challengeApproved;
+
+        // --- Quiz: answered / correct ---
+        let quizAnswered = 0;
+        let quizCorrect  = 0;
+        let quizTotal    = quizOrder.length;
+
+        quizAnswersRaw.forEach(qa => {
+          if (!qa) return;
+          quizAnswered++;
+          const qId    = qa.questionId;
+          const given  = qa.answer;
+          const correct = correctMap[qId];
+          if (correct && given === correct) quizCorrect++;
+        });
+
+        // --- Challenges ---
+        const challengesTotal   = maxChallengesBase;
+        const challengesApprovedCount = challengeApproved.filter(Boolean).length;
+
+        totalPhotos           += photos;
+        totalQuizCorrect      += quizCorrect;
+        totalLocationsCorrect += locationCorrect;
+        totalChallengesDone   += challengesApprovedCount;
+
+        // --- Poäng ---
+        // OBS: bilder ger INGA poäng längre
+        const totalPoints =
+          quizCorrect * 5 +            // 5 p per rätt quiz-svar
+          locationCorrect * 3 +        // 3 p per rätt plats
+          challengesApprovedCount * 4; // 4 p per godkänd utmaning
+
+        // Status-pill för quiz
+        let quizPillClass = "pill-none";
+        let quizPillText  = "Inte startat";
+        if (quizAnswered >= quizTotal && quizTotal > 0) {
+          quizPillClass = "pill-done";
+          quizPillText  = "Klar";
+        } else if (quizAnswered > 0) {
+          quizPillClass = "pill-partial";
+          quizPillText  = "Pågår";
+        }
+
+        // Status-pill för utmaningar (approved)
+        let challPillClass = "pill-none";
+        let challPillText  = "Inte godkänd ännu";
+        if (challengesApprovedCount >= challengesTotal && challengesTotal > 0) {
+          challPillClass = "pill-done";
+          challPillText  = "Alla godkända";
+        } else if (challengesApprovedCount > 0) {
+          challPillClass = "pill-partial";
+          challPillText  = "Delvis godkända";
+        }
+
+        results.push({
+          id: p.id,
+          name: p.name || "(okänt namn)",
+          photos,
+
+          quizAnswered,
+          quizCorrect,
+          quizTotal,
+          quizAnswersRaw,
+          quizOrder,
+          quizPillClass,
+          quizPillText,
+
+          locationCorrect,
+          locationTotal,
+          locAnswers,
+          locResults,
+
+          challengesTotal,
+          challengesApprovedCount,
+          challengeBoard,
+          challengeMarked,
+          challengeApproved,
+          challengeEvidence,
+          challPillClass,
+          challPillText,
+
+          totalPoints,
+          rawData: pdata
+        });
+      });
+
+      // Sortera efter totalpoäng
+      results.sort((a, b) => b.totalPoints - a.totalPoints);
+      playerDetails = results;
+
+      // Stats
+      document.getElementById("totalPlayers").textContent    = "👥 Spelare: " + players.length;
+      document.getElementById("totalPhotos").textContent     = "📸 Bilder: " + totalPhotos;
+      document.getElementById("totalQuiz").textContent       = "❓ Rätt på quiz: " + totalQuizCorrect;
+      document.getElementById("totalLocations").textContent  = "🌍 Rätt platser: " + totalLocationsCorrect;
+      document.getElementById("totalChallenges").textContent = "🧩 Godkända utmaningar: " + totalChallengesDone;
+
+      // Ledartavla
+      const tbody = tableEl.querySelector("tbody");
+      tbody.innerHTML = "";
+      results.forEach((r, i) => {
+        const tr = document.createElement("tr");
+        tr.classList.add("player-row");
+        tr.addEventListener("click", () => showPlayerDetails(i));
+
+        const rankTd = document.createElement("td");
+        rankTd.className = "rank";
+        rankTd.textContent = i + 1;
+        tr.appendChild(rankTd);
+
+        const nameTd = document.createElement("td");
+        nameTd.textContent = r.name;
+        tr.appendChild(nameTd);
+
+        const photosTd = document.createElement("td");
+        photosTd.textContent = r.photos;
+        tr.appendChild(photosTd);
+
+        // Quiz
+        const quizTd = document.createElement("td");
+        quizTd.textContent = `${r.quizCorrect} / ${r.quizTotal || "-"}`;
+        const qp = document.createElement("span");
+        qp.className = "pill " + r.quizPillClass;
+        qp.textContent = r.quizPillText;
+        quizTd.appendChild(qp);
+        tr.appendChild(quizTd);
+
+        // Gissa plats
+        const locTd = document.createElement("td");
+        locTd.textContent = `${r.locationCorrect} / ${r.locationTotal}`;
+        tr.appendChild(locTd);
+
+        // Utmaningar
+        const challTd = document.createElement("td");
+        challTd.textContent = `${r.challengesApprovedCount} / ${r.challengesTotal || "-"}`;
+        const cp = document.createElement("span");
+        cp.className = "pill " + r.challPillClass;
+        cp.textContent = r.challPillText;
+        challTd.appendChild(cp);
+        tr.appendChild(challTd);
+
+        // Totalt
+        const totalTd = document.createElement("td");
+        totalTd.className = "total-cell";
+        if (i === 0)      totalTd.classList.add("total-gold");
+        else if (i === 1) totalTd.classList.add("total-silver");
+        else if (i === 2) totalTd.classList.add("total-bronze");
+        totalTd.textContent = r.totalPoints;
+        tr.appendChild(totalTd);
+
+        tbody.appendChild(tr);
+      });
+
+      loadingEl.style.display = "none";
+      tableEl.style.display   = "table";
+    } catch (err) {
+      console.error(err);
+      loadingEl.style.display = "none";
+      errorEl.textContent = "Kunde inte hämta data: " + err.message;
+      errorEl.style.display = "block";
+    }
+  }
+
+  // --- Modal + deep dive ---
+
+  function showPlayerDetails(index) {
+    const p = playerDetails[index];
+    if (!p) return;
+
+    const modal          = document.getElementById("playerModal");
+    const nameEl         = document.getElementById("modalPlayerName");
+    const summaryEl      = document.getElementById("modalSummary");
+    const quizTbody      = document.querySelector("#modalQuizTable tbody");
+    const challTbody     = document.querySelector("#modalChallengeTable tbody");
+    const locationTbody  = document.querySelector("#modalLocationTable tbody");
+
+    nameEl.textContent = p.name;
+    summaryEl.textContent =
+      `📸 Bilder: ${p.photos}` +
+      ` • ❓ Quiz: ${p.quizCorrect}/${p.quizTotal || 0} (besvarade: ${p.quizAnswered})` +
+      ` • 🌍 Plats: ${p.locationCorrect}/${p.locationTotal}` +
+      ` • 🧩 Utmaningar (godkända): ${p.challengesApprovedCount}/${p.challengesTotal || 0}` +
+      ` • Totalt: ${p.totalPoints} poäng`;
+
+    // --- Quiz-detaljer ---
+    quizTbody.innerHTML = "";
+    const answerByQid = {};
+    p.quizAnswersRaw.forEach(a => {
+      if (a && a.questionId != null) {
+        answerByQid[a.questionId] = a.answer;
+      }
+    });
+
+    const order = (p.quizOrder && p.quizOrder.length)
+      ? p.quizOrder
+      : Object.keys(answerByQid).map(x => Number(x));
+
+    order.forEach((qid, idx) => {
+      const q = questionMap[qid];
+      if (!q) return;
+
+      const yourLetter    = answerByQid[qid] || null;
+      const correctLetter = correctMap[qid] || null;
+
+      const yourText    = yourLetter    ? letterToText(q, yourLetter)    : "";
+      const correctText = correctLetter ? letterToText(q, correctLetter) : "";
+
+      const tr = document.createElement("tr");
+
+      const nrTd = document.createElement("td");
+      nrTd.textContent = idx + 1;
+      tr.appendChild(nrTd);
+
+      const qTd = document.createElement("td");
+      qTd.textContent = q.question;
+      tr.appendChild(qTd);
+
+      const yourTd = document.createElement("td");
+      if (!yourLetter) {
+        yourTd.textContent = "Ej besvarad";
+      } else {
+        const correct = yourLetter === correctLetter;
+        yourTd.innerHTML =
+          `<span class="${correct ? "answer-correct" : "answer-wrong"}">${yourLetter}) ${yourText || ""}</span>`;
+      }
+      tr.appendChild(yourTd);
+
+      const correctTd = document.createElement("td");
+      if (!correctLetter) correctTd.textContent = "-";
+      else correctTd.textContent = `${correctLetter}) ${correctText}`;
+      tr.appendChild(correctTd);
+
+      quizTbody.appendChild(tr);
+    });
+
+    // --- Gissa plats-detaljer ---
+    locationTbody.innerHTML = "";
+    for (let i = 0; i < LOCATION_COUNT; i++) {
+      const meta    = LOCATION_META[i] || { label: `Plats ${i + 1}` };
+      const guess   = p.locAnswers[i] ?? "";
+      const result  = p.locResults[i];
+      const tr      = document.createElement("tr");
+
+      const nrTd = document.createElement("td");
+      nrTd.textContent = i + 1;
+      tr.appendChild(nrTd);
+
+      const placeTd = document.createElement("td");
+      placeTd.textContent = meta.label;
+      tr.appendChild(placeTd);
+
+      const guessTd = document.createElement("td");
+      guessTd.textContent = guess || "(ingen gissning)";
+      tr.appendChild(guessTd);
+
+      const resTd = document.createElement("td");
+      if (result === true) {
+        resTd.innerHTML = `<span class="badge-small badge-ok">✅ Rätt</span>`;
+      } else if (result === false) {
+        resTd.innerHTML = `<span class="badge-small badge-fail">❌ Fel</span>`;
+      } else {
+        resTd.textContent = "Ej besvarad";
+      }
+      tr.appendChild(resTd);
+
+      locationTbody.appendChild(tr);
+    }
+
+    // --- Utmanings-detaljer + knappar för godkännande ---
+    challTbody.innerHTML = "";
+    const maxChallenges = Math.max(
+      p.challengeBoard.length,
+      p.challengeMarked.length,
+      p.challengeApproved.length,
+      p.challengeEvidence.length || 0
+    );
+
+    for (let i = 0; i < maxChallenges; i++) {
+      const text     = p.challengeBoard[i] ?? "";
+      const marked   = !!p.challengeMarked[i];
+      const approved = !!p.challengeApproved[i];
+      const evid     = p.challengeEvidence[i];
+
+      const tr = document.createElement("tr");
+
+      const nrTd = document.createElement("td");
+      nrTd.textContent = i + 1;
+      tr.appendChild(nrTd);
+
+      const textTd = document.createElement("td");
+      textTd.textContent = text;
+      tr.appendChild(textTd);
+
+      const statusTd = document.createElement("td");
+      let statusHtml = "";
+      if (marked) statusHtml = "Spelare: ✅ markerad<br>";
+      else        statusHtml = "Spelare: ⌛ inte markerad<br>";
+
+      statusHtml += "Domare: " + (approved
+        ? `<span class="badge-small badge-ok">Godkänd</span>`
+        : `<span class="badge-small badge-fail">Ej godkänd</span>`);
+      statusTd.innerHTML = statusHtml;
+
+      if (marked) {
+        const btn = document.createElement("button");
+        btn.textContent = approved ? "Ta bort godkännande" : "Godkänn (+4p)";
+        btn.style.marginTop = "4px";
+        btn.style.padding   = "2px 8px";
+        btn.style.borderRadius = "8px";
+        btn.style.border    = "none";
+        btn.style.cursor    = "pointer";
+        btn.style.fontSize  = "0.8em";
+        btn.style.background = approved ? "#b71c1c" : "#2e7d32";
+        btn.style.color      = "#fff";
+
+        btn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          toggleChallengeApproval(p, i);
+        });
+
+        statusTd.appendChild(document.createElement("br"));
+        statusTd.appendChild(btn);
+      }
+
+      tr.appendChild(statusTd);
+
+      const evidTd = document.createElement("td");
+      if (evid && typeof evid === "object") {
+        if (evid.type === "photo" && evid.value) {
+          const a = document.createElement("a");
+          a.href = evid.value;
+          a.target = "_blank";
+          a.className = "evidence-link";
+          a.textContent = "📸 Foto";
+          evidTd.appendChild(a);
+        } else if (evid.type === "text" && evid.value) {
+          evidTd.textContent = evid.value;
+        } else {
+          evidTd.textContent = "";
+        }
+      } else {
+        evidTd.textContent = marked ? "(Ingen extra info)" : "-";
+      }
+      tr.appendChild(evidTd);
+
+      challTbody.appendChild(tr);
+    }
+
+    modal.style.display = "block";
+  }
+
+  function closePlayerModal() {
+    document.getElementById("playerModal").style.display = "none";
+  }
+
+  // --- Toggle domargodkännande av utmaning ---
+  async function toggleChallengeApproval(playerObj, challengeIndex) {
+    try {
+      const idx = playerDetails.findIndex(p => p.id === playerObj.id);
+      if (idx === -1) return;
+
+      const p = playerDetails[idx];
+
+      const approvedArray = Array.isArray(p.rawData.challengeApproved)
+        ? p.rawData.challengeApproved
+        : [];
+      const maxLen = Math.max(approvedArray.length, challengeIndex + 1);
+      while (approvedArray.length < maxLen) approvedArray.push(false);
+      approvedArray[challengeIndex] = !approvedArray[challengeIndex];
+
+      p.rawData.challengeApproved = approvedArray;
+      p.challengeApproved = approvedArray;
+
+      const approvedCount = approvedArray.filter(Boolean).length;
+      p.challengesApprovedCount = approvedCount;
+
+      // räkna om totalpoängen för just denna spelare (utan bilder)
+      p.totalPoints =
+        p.quizCorrect * 5 +
+        p.locationCorrect * 3 +
+        approvedCount * 4;
+
+      // PUT till Sheety
+      await fetch(`${API_URL}/${p.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blad1: {
+            data: JSON.stringify(p.rawData)
+          }
+        })
+      });
+
+      // Ladda om hela tabellen för att uppdatera ranking & totals
+      await loadData();
+
+      // Öppna samma spelare igen efter reload (smidigt för domaren)
+      const newIndex = playerDetails.findIndex(x => x.id === p.id);
+      if (newIndex !== -1) showPlayerDetails(newIndex);
+    } catch (err) {
+      console.error("Fel vid uppdatering av utmaning:", err);
+      alert("Kunde inte spara ändringen. Prova igen.");
+    }
+  }
+
+  loadData();
+</script>
+
+</body>
+</html>
