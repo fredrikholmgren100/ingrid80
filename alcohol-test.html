@@ -1,144 +1,181 @@
 <!doctype html>
 <html lang="sv">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Alkoholtestet 🍻</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alkoholtestet 🍻</title>
 
-<style>
-  body {
-    margin: 0;
-    background: radial-gradient(circle at center, #1b1d26, #0f1014);
-    color: #fff;
-    font-family: Arial, sans-serif;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow: hidden;
-  }
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle at center, #1b1d26, #0f1014);
+      color: #fff;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow: hidden;
+    }
 
-  h1 {
-    margin-bottom: 10px;
-    color: #ffd700;
-  }
+    h1 {
+      margin-bottom: 6px;
+      color: #ffd700;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
 
-  .scoreboard {
-    text-align: center;
-    margin-top: 15px;
-    z-index: 10;
-  }
+    .scoreboard {
+      text-align: center;
+      margin-top: 15px;
+      z-index: 10;
+    }
 
-  .game-area {
-    position: relative;
-    width: 90vw;
-    height: 60vh;
-    max-width: 900px;
-    max-height: 600px;
-    margin-top: 20px;
-    border-radius: 12px;
-    overflow: hidden;
-    background: rgba(0, 0, 0, 0.15);
-    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5);
-    transition: width 0.2s, height 0.2s;
-  }
+    .game-area {
+      position: relative;
+      width: min(90vw, 900px);
+      height: min(70vh, 600px);
+      margin-top: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.15);
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5);
+    }
 
-  .boat {
-    position: absolute;
-    font-size: 6vmin; /* auto scaling */
-    cursor: pointer;
-    user-select: none;
-    transition: transform 0.1s;
-  }
+    .boat {
+      position: absolute;
+      font-size: 40px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease;
+    }
+    .boat:active { transform: scale(0.9); }
 
-  .boat:active {
-    transform: scale(0.9);
-  }
+    .result {
+      margin-top: 15px;
+      font-size: 1.3em;
+      font-weight: bold;
+      text-align: center;
+    }
 
-  /* Result Popup Modal */
-  .modal-bg {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-  }
+    button {
+      margin-top: 10px;
+      background: #0066cc;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    button:hover { background: #0059b3; }
 
-  .modal {
-    background: #222;
-    padding: 25px 30px;
-    border-radius: 14px;
-    max-width: 360px;
-    text-align: center;
-    box-shadow: 0 0 20px rgba(0,0,0,0.6);
-    animation: pop 0.25s ease-out;
-  }
+    /* Modal leaderboard */
+    .modal-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
 
-  @keyframes pop {
-    from { transform: scale(0.7); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
+    .modal {
+      background: #22252f;
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 550px;
+      max-height: 80%;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
 
-  .modal h2 {
-    margin-top: 0;
-    color: #ffd700;
-  }
+    .modal h2 {
+      margin-top: 0;
+      text-align: center;
+      color: #ffd700;
+    }
 
-  button {
-    margin-top: 15px;
-    background: #0066cc;
-    color: #fff;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1em;
-  }
+    .leader-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.05em;
+    }
+    .leader-item span {
+      opacity: 0.9;
+    }
 
-  button:hover {
-    background: #0059b3;
-  }
-</style>
+    .close-btn {
+      background: #d43f3f;
+      margin-top: 20px;
+    }
+    .close-btn:hover {
+      background: #b73535;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="scoreboard">
+    <h1>🍻 Alkoholtestet</h1>
+    <p>Klicka på alla båtar som dyker upp!</p>
 
-<div class="scoreboard">
-  <h1>🍻 Alkoholtestet</h1>
-  <p>Klicka på alla båtar som dyker upp!</p>
-  <p>Poäng: <span id="score">0</span> / <span id="total">0</span></p>
-  <button id="startBtn">Starta Testet</button>
-</div>
+    <p>
+      Poäng:
+      <span id="score">0</span> /
+      <span id="total">0</span>
+    </p>
 
-<div class="game-area" id="gameArea"></div>
-
-<!-- Popup Modal -->
-<div id="modalBg" class="modal-bg">
-  <div class="modal">
-    <h2>🍻 Resultat</h2>
-    <p id="modalResult"></p>
-    <button onclick="closeModal()">Stäng</button>
+    <button id="startBtn">Starta Testet</button>
+    <br>
+    <button id="leaderBtn">📊 Visa Resultatlista</button>
   </div>
-</div>
+
+  <div class="game-area" id="gameArea"></div>
+  <div class="result" id="resultText"></div>
+
+  <!-- Leaderboard Modal -->
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <h2>📊 Resultatlista</h2>
+      <div id="leaderboard"></div>
+      <button class="close-btn" onclick="closeLeaderboard()">Stäng</button>
+    </div>
+  </div>
 
 <script>
+  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
   const gameArea = document.getElementById('gameArea');
   const scoreDisplay = document.getElementById('score');
   const totalDisplay = document.getElementById('total');
+  const resultText = document.getElementById('resultText');
   const startBtn = document.getElementById('startBtn');
-  const modalBg = document.getElementById('modalBg');
-  const modalResult = document.getElementById('modalResult');
+  const leaderBtn = document.getElementById('leaderBtn');
+
+  const modalBg = document.getElementById("modalBg");
+  const leaderboardEl = document.getElementById("leaderboard");
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const playerId = urlParams.get("id");
 
   let score = 0;
   let total = 0;
   let gameRunning = false;
   let gameInterval;
 
+  /* ----------------------------------------------
+     GAME LOGIC
+  ---------------------------------------------- */
+
   function randomPosition() {
     const areaRect = gameArea.getBoundingClientRect();
-    const boatSize = areaRect.width * 0.08; /* responsive */
+    const boatSize = 60;
     const x = Math.random() * (areaRect.width - boatSize);
     const y = Math.random() * (areaRect.height - boatSize);
     return { x, y };
@@ -153,8 +190,8 @@
     const boat = document.createElement('div');
     boat.classList.add('boat');
     boat.textContent = "🛳️";
-
     const { x, y } = randomPosition();
+
     boat.style.left = `${x}px`;
     boat.style.top = `${y}px`;
 
@@ -178,45 +215,115 @@
     total = 0;
     scoreDisplay.textContent = "0";
     totalDisplay.textContent = "0";
+    resultText.textContent = "";
     gameRunning = true;
+
     startBtn.disabled = true;
 
     gameInterval = setInterval(spawnBoat, 700);
     setTimeout(endGame, 15000);
   }
 
-  function endGame() {
+  async function endGame() {
     gameRunning = false;
     clearInterval(gameInterval);
+
     startBtn.disabled = false;
 
     const accuracy = total > 0 ? (score / total) * 100 : 0;
+    let label = "";
 
-    let result = "";
-    if (accuracy > 99) result = "Gay.. Gå här ifrån";
-    else if (accuracy > 80) result = "🍹 Du är nykter som en nunna!";
-    else if (accuracy > 50) result = "🍺 Lite vinglig, men fortfarande stående!";
-    else result = "🤪 Du borde kanske ta en taxi hem...";
+    if (accuracy > 99) label = "Gay.. Gå här ifrån";
+    else if (accuracy > 80) label = "🍹 Du är nykter som en nunna!";
+    else if (accuracy > 50) label = "🍺 Lite vinglig, men fortfarande stående!";
+    else label = "🤪 Du borde kanske ta en taxi hem...";
 
-    modalResult.textContent = `${result} (${accuracy.toFixed(0)}%)`;
-    modalBg.style.display = "flex";
-  }
+    resultText.textContent = `${label} (${accuracy.toFixed(0)}%)`;
 
-  function closeModal() {
-    modalBg.style.display = "none";
+    // Save score to Sheety
+    await saveScore(accuracy, label);
   }
 
   startBtn.addEventListener('click', startGame);
 
-  /* Auto responsive size */
-  const resizeObserver = new ResizeObserver(() => {
-    const w = window.innerWidth * 0.9;
-    const h = window.innerHeight * 0.6;
-    gameArea.style.width = `${w}px`;
-    gameArea.style.height = `${h}px`;
-  });
+  async function saveScore(accuracy, label) {
+    const res = await fetch(`${API_URL}/${playerId}`);
+    const json = await res.json();
+    const key = Object.keys(json)[0];
+    let row = json[key];
 
-  resizeObserver.observe(document.body);
+    let data = {};
+    try { data = JSON.parse(row.data || "{}"); } catch {}
+
+    data.alkoTest = {
+      accuracy: Math.round(accuracy),
+      label,
+      timestamp: Date.now()
+    };
+
+    await fetch(`${API_URL}/${playerId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ blad1: { data: JSON.stringify(data) } })
+    });
+  }
+
+  /* ----------------------------------------------
+     LEADERBOARD
+  ---------------------------------------------- */
+
+  async function openLeaderboard() {
+    leaderboardEl.innerHTML = "<p>Laddar...</p>";
+    modalBg.style.display = "flex";
+
+    const res = await fetch(API_URL);
+    const json = await res.json();
+    const key = Object.keys(json)[0];
+    const players = json[key];
+
+    let entries = [];
+
+    players.forEach(p => {
+      if (!p.data) return;
+
+      let d = {};
+      try { d = JSON.parse(p.data); } catch {}
+
+      if (d.alkoTest) {
+        entries.push({
+          accuracy: d.alkoTest.accuracy,
+          label: d.alkoTest.label,
+          timestamp: d.alkoTest.timestamp
+        });
+      }
+    });
+
+    entries.sort((a, b) => b.accuracy - a.accuracy);
+
+    leaderboardEl.innerHTML = "";
+
+    entries.forEach((e, i) => {
+      const date = new Date(e.timestamp).toLocaleString("sv-SE");
+      leaderboardEl.innerHTML += `
+        <div class="leader-item">
+          <span>#${i+1}</span>
+          <span>${e.accuracy}% – ${e.label}</span>
+          <span>${date}</span>
+        </div>
+      `;
+    });
+
+    if (entries.length === 0) {
+      leaderboardEl.innerHTML = "<p>Inga resultat sparade ännu.</p>";
+    }
+  }
+
+  function closeLeaderboard() {
+    modalBg.style.display = "none";
+  }
+
+  leaderBtn.addEventListener("click", openLeaderboard);
+
 </script>
 
 </body>
