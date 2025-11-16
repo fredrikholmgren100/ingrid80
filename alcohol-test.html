@@ -52,39 +52,46 @@
       transform: scale(0.9);
     }
 
-    .result-popup {
+    /* POPUP BASE */
+    .popup {
       position: fixed;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(20,20,30,0.95);
+      transform: translate(-50%, -50%) scale(0.7);
+      background: rgba(20,20,30,0.97);
       padding: 25px;
       border-radius: 14px;
       text-align: center;
       width: 85%;
-      max-width: 340px;
+      max-width: 360px;
       box-shadow: 0 0 20px #000;
       display: none;
       z-index: 2000;
+      opacity: 0;
+      transition: 0.25s ease;
     }
 
-    .leaderboard-box {
-      margin-top: 20px;
-      background: rgba(0,0,0,0.25);
-      padding: 15px;
-      border-radius: 12px;
-      width: min(90vw, 600px);
-      display: none;
+    .popup.show {
+      display: block;
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
     }
 
-    .leaderboard-box table {
+    .popup h2, .popup h3 {
+      margin-top: 0;
+      color: #ffd700;
+    }
+
+    .popup table {
+      margin-top: 10px;
       width: 100%;
       color: white;
+      border-collapse: collapse;
     }
 
-    .leaderboard-box td {
+    .popup td {
       padding: 6px;
-      border-bottom: 1px solid rgba(255,255,255,0.15);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
     button {
@@ -116,16 +123,17 @@
   <div class="game-area" id="gameArea"></div>
 
   <!-- RESULT POPUP -->
-  <div class="result-popup" id="resultPopup">
+  <div class="popup" id="resultPopup">
     <h2 id="popupTitle"></h2>
     <p id="popupScore"></p>
     <button id="showLeaderboard">Visa Topplistan</button>
   </div>
 
-  <!-- LEADERBOARD -->
-  <div class="leaderboard-box" id="leaderboardBox">
+  <!-- LEADERBOARD POPUP -->
+  <div class="popup" id="leaderboardPopup">
     <h3>🏆 Topplistan – Alkoholtestet</h3>
     <table id="leaderboardTable"></table>
+    <button onclick="closeLeaderboard()">Stäng</button>
   </div>
 
 <script>
@@ -141,7 +149,9 @@
   const resultPopup = document.getElementById("resultPopup");
   const popupTitle = document.getElementById("popupTitle");
   const popupScore = document.getElementById("popupScore");
-  const leaderboardBox = document.getElementById("leaderboardBox");
+
+  const leaderboardPopup = document.getElementById("leaderboardPopup");
+  const leaderboardTable = document.getElementById("leaderboardTable");
 
   const showLeaderboardBtn = document.getElementById("showLeaderboard");
 
@@ -181,7 +191,7 @@
 
     gameArea.appendChild(boat);
 
-    // remove boat after 1.8s (longer to allow the last-click!)
+    // last click fix
     setTimeout(() => {
       if (gameArea.contains(boat)) boat.remove();
     }, 1800);
@@ -194,13 +204,10 @@
     total = 0;
     scoreDisplay.textContent = "0";
     totalDisplay.textContent = "0";
-
     gameRunning = true;
     startBtn.disabled = true;
 
     gameInterval = setInterval(spawnBoat, 700);
-
-    // Run for 15 seconds total
     setTimeout(endGame, 15000);
   }
 
@@ -208,9 +215,7 @@
     gameRunning = false;
     clearInterval(gameInterval);
 
-    // Wait 600ms to allow last boat click
     setTimeout(async () => {
-
       const accuracy = total > 0 ? (score / total) * 100 : 0;
       let label = "";
 
@@ -222,7 +227,7 @@
       popupTitle.textContent = label;
       popupScore.textContent = `Träff: ${score} av ${total} (${accuracy.toFixed(0)}%)`;
 
-      resultPopup.style.display = "block";
+      resultPopup.classList.add("show");
 
       await saveScore(score, total, accuracy, label);
 
@@ -233,15 +238,14 @@
 
   async function saveScore(score, total, accuracy, label) {
     const res = await fetch(`${API_URL}/${playerId}`);
-    const data = await res.json();
-    const key = Object.keys(data)[0];
-    let player = data[key];
+    const json = await res.json();
+    const key = Object.keys(json)[0];
+    const player = json[key];
 
-    let playerData = {};
-    try { playerData = JSON.parse(player.data || "{}"); } 
-    catch { playerData = {}; }
+    let data = {};
+    try { data = JSON.parse(player.data || "{}"); } catch {}
 
-    playerData.alkotest = {
+    data.alkotest = {
       score,
       total,
       accuracy,
@@ -252,20 +256,21 @@
     await fetch(`${API_URL}/${playerId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ blad1: { data: JSON.stringify(playerData) } })
+      body: JSON.stringify({ blad1: { data: JSON.stringify(data) } })
     });
   }
 
   showLeaderboardBtn.addEventListener("click", loadLeaderboard);
 
   async function loadLeaderboard() {
-    leaderboardBox.style.display = "block";
+    leaderboardTable.innerHTML = "<tr><td>Laddar...</td></tr>";
+    leaderboardPopup.classList.add("show");
 
     const res = await fetch(API_URL);
     const json = await res.json();
     const key = Object.keys(json)[0];
-    const players = json[key];
 
+    let players = json[key];
     let rows = [];
 
     players.forEach(p => {
@@ -282,13 +287,16 @@
 
     rows.sort((a,b) => b.accuracy - a.accuracy);
 
-    const table = document.getElementById("leaderboardTable");
-    table.innerHTML = rows.map(r => `
+    leaderboardTable.innerHTML = rows.map(r => `
       <tr>
         <td>${r.name}</td>
-        <td>${r.accuracy.toFixed(0)}%</td>
+        <td style="text-align:right;">${r.accuracy.toFixed(0)}%</td>
       </tr>
     `).join("");
+  }
+
+  function closeLeaderboard() {
+    leaderboardPopup.classList.remove("show");
   }
 
   startBtn.addEventListener("click", startGame);
