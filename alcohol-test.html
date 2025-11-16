@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alkoholtestet 🍻</title>
-
   <style>
     body {
       margin: 0;
@@ -12,11 +11,10 @@
       color: #fff;
       font-family: Arial, sans-serif;
       height: 100vh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      overflow: hidden;
     }
 
     h1 {
@@ -26,16 +24,19 @@
 
     .scoreboard {
       text-align: center;
-      margin-top: 15px;
-      z-index: 10;
+      margin-top: 10px;
+      z-index: 5;
+      width: 100%;
     }
 
     .game-area {
       position: relative;
-      margin-top: 20px;
+      width: calc(100vw - 20px);
+      height: 0; /* will be set dynamically */
+      margin-top: 10px;
       border-radius: 12px;
       overflow: hidden;
-      background: rgba(0, 0, 0, 0.15);
+      background: rgba(0, 0, 0, 0.2);
       box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5);
     }
 
@@ -51,292 +52,264 @@
       transform: scale(0.9);
     }
 
-    button {
-      margin-top: 15px;
-      background: #0066cc;
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 1em;
-    }
-
-    button:hover {
-      background: #0059b3;
-    }
-
-    /* --- RESULT MODAL --- */
-    #resultModalBg {
+    /* RESULT POPUP */
+    .modal-overlay, .leaderboard-overlay {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(4px);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 999;
+      z-index: 20;
     }
 
-    #resultModalBg .modal {
-      background: #22252f;
-      padding: 20px;
-      border-radius: 12px;
+    .modal, .leaderboard-box {
+      background: #222533;
+      padding: 25px;
+      border-radius: 14px;
       width: 90%;
-      max-width: 380px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      max-width: 420px;
       text-align: center;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.4);
     }
 
-    #resultModalBg h2 {
-      margin-top: 0;
-      color: #ffd700;
+    .leaderboard-box {
+      max-height: 80vh;
+      overflow-y: auto;
     }
 
-    .close-btn {
+    button {
       background: #0066cc;
-      margin-top: 20px;
-    }
-
-    .close-btn:hover {
-      background: #0059b3;
-    }
-
-    /* --- LEADERBOARD POPUP --- */
-    #leaderboardModalBg {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-    }
-
-    .leaderboard-modal {
-      background: #1e2129;
-      padding: 20px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 450px;
-      text-align: center;
-      color: #fff;
-    }
-
-    .leaderboard-modal h2 {
-      color: #ffd700;
-      margin-bottom: 10px;
-    }
-
-    table {
-      width: 100%;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
       margin-top: 10px;
-      border-collapse: collapse;
-      color: #fff;
     }
 
-    td, th {
-      padding: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.15);
+    button:hover {
+      background: #0055a3;
     }
 
-    .rank-1 { color: gold; font-weight: bold; }
-    .rank-2 { color: silver; font-weight: bold; }
-    .rank-3 { color: #cd7f32; font-weight: bold; }
+    #leaderboardBtn {
+      display: none;
+    }
+
+    .leaderboard-item {
+      background: rgba(255,255,255,0.05);
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 8px;
+      text-align: left;
+    }
 
   </style>
 </head>
-
 <body>
 
   <div class="scoreboard">
     <h1>🍻 Alkoholtestet</h1>
     <p>Klicka på alla båtar som dyker upp!</p>
     <p>Poäng: <span id="score">0</span> / <span id="total">0</span></p>
+
     <button id="startBtn">Starta Testet</button>
-    <br>
-    <!-- Hidden until you finish the test -->
-    <button id="leaderboardBtn" onclick="openLeaderboard()" style="display:none;">
-      📊 Visa Leaderboard
-    </button>
+    <button id="leaderboardBtn" onclick="openLeaderboard()">📊 Visa Leaderboard</button>
   </div>
 
   <div class="game-area" id="gameArea"></div>
 
-  <!-- RESULT MODAL -->
-  <div class="modal-bg" id="resultModalBg">
+  <!-- RESULT POPUP -->
+  <div class="modal-overlay" id="resultOverlay">
     <div class="modal">
-      <h2 id="resultTitle">Resultat</h2>
-      <p id="resultDetails"></p>
-      <button class="close-btn" onclick="closeResultModal()">OK</button>
+      <h2 id="resultLabel"></h2>
+      <p id="resultPercent"></p>
+      <button onclick="closeResult()">Stäng</button>
     </div>
   </div>
 
-  <!-- LEADERBOARD MODAL -->
-  <div id="leaderboardModalBg">
-    <div class="leaderboard-modal">
-      <h2>🏆 Leaderboard</h2>
-      <table id="leaderboardTable"></table>
-      <button class="close-btn" onclick="closeLeaderboard()">Stäng</button>
+  <!-- LEADERBOARD POPUP -->
+  <div class="leaderboard-overlay" id="leaderboardOverlay">
+    <div class="leaderboard-box">
+      <h2>📊 Leaderboard</h2>
+      <div id="leaderboardList"></div>
+      <button onclick="closeLeaderboard()">Stäng</button>
     </div>
   </div>
 
-  <script>
-    const gameArea = document.getElementById('gameArea');
-    const scoreDisplay = document.getElementById('score');
-    const totalDisplay = document.getElementById('total');
-    const startBtn = document.getElementById('startBtn');
-    const leaderboardBtn = document.getElementById('leaderboardBtn');
+<script>
+  // CONFIG
+  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/alkotest";
 
-    let score = 0;
-    let total = 0;
-    let gameRunning = false;
-    let gameInterval;
+  const gameArea = document.getElementById("gameArea");
+  const scoreDisplay = document.getElementById("score");
+  const totalDisplay = document.getElementById("total");
+  const startBtn = document.getElementById("startBtn");
+  const leaderboardBtn = document.getElementById("leaderboardBtn");
 
-    /* ------------------------- RESPONSIVE GAME AREA ------------------------- */
-    function resizeGameArea() {
-      const width = Math.min(window.innerWidth * 0.9, 1000);
-      const height = Math.min(window.innerHeight * 0.7, 700);
-      gameArea.style.width = width + "px";
-      gameArea.style.height = height + "px";
-    }
-    resizeGameArea();
-    window.addEventListener("resize", resizeGameArea);
-    window.addEventListener("orientationchange", resizeGameArea);
+  let score = 0;
+  let total = 0;
+  let gameRunning = false;
+  let gameInterval;
 
-    /* ---------------------------- GAME LOGIC ------------------------------- */
-    function randomPosition() {
-      const rect = gameArea.getBoundingClientRect();
-      const size = 50; 
-      return {
-        x: Math.random() * (rect.width - size),
-        y: Math.random() * (rect.height - size)
-      };
-    }
+  // ---------- RESPONSIVE GAME AREA ----------
+  function resizeGameArea() {
+    const scoreboardHeight = document.querySelector(".scoreboard").offsetHeight;
+    const availableHeight = window.innerHeight - scoreboardHeight - 20;
 
-    function spawnBoat() {
-      if (!gameRunning) return;
-      total++;
-      totalDisplay.textContent = total;
+    gameArea.style.height = availableHeight + "px";
+    gameArea.style.width = "calc(100vw - 20px)";
+  }
 
-      const boat = document.createElement('div');
-      boat.classList.add('boat');
-      boat.textContent = "🛳️";
+  window.addEventListener("resize", resizeGameArea);
+  window.addEventListener("orientationchange", resizeGameArea);
+  window.addEventListener("DOMContentLoaded", resizeGameArea);
+  window.addEventListener("load", resizeGameArea);
 
-      const { x, y } = randomPosition();
-      boat.style.left = x + "px";
-      boat.style.top = y + "px";
+  // ---------- GAME LOGIC ----------
+  function randomPosition() {
+    const rect = gameArea.getBoundingClientRect();
+    const size = 40;
 
-      boat.onclick = () => {
-        score++;
-        scoreDisplay.textContent = score;
-        boat.remove();
-      };
+    const x = Math.random() * (rect.width - size);
+    const y = Math.random() * (rect.height - size);
 
-      gameArea.appendChild(boat);
+    return { x, y };
+  }
 
-      // Remove missed boats
-      setTimeout(() => {
-        if (gameArea.contains(boat)) boat.remove();
-      }, 1500);
-    }
+  function spawnBoat() {
+    if (!gameRunning) return;
 
-    function startGame() {
-      if (gameRunning) return;
-      score = 0;
-      total = 0;
-      scoreDisplay.textContent = "0";
-      totalDisplay.textContent = "0";
-      gameArea.innerHTML = "";
+    total++;
+    totalDisplay.textContent = total;
 
-      gameRunning = true;
-      startBtn.disabled = true;
+    const boat = document.createElement("div");
+    boat.classList.add("boat");
+    boat.textContent = "🛳️";
 
-      gameInterval = setInterval(spawnBoat, 700);
-      setTimeout(endGame, 15000);
-    }
+    const { x, y } = randomPosition();
+    boat.style.left = `${x}px`;
+    boat.style.top = `${y}px`;
 
-    startBtn.onclick = startGame;
+    boat.addEventListener("click", () => {
+      score++;
+      scoreDisplay.textContent = score;
+      boat.remove();
+    });
 
-    /* ---------------------------- END GAME ------------------------------ */
-    function showResultModal(label, accuracy) {
-      document.getElementById("resultTitle").textContent = label;
-      document.getElementById("resultDetails").textContent =
-        "Träffsäkerhet: " + accuracy.toFixed(0) + "%";
+    gameArea.appendChild(boat);
 
-      document.getElementById("resultModalBg").style.display = "flex";
-    }
+    setTimeout(() => {
+      if (gameArea.contains(boat)) boat.remove();
+    }, 1500);
+  }
 
-    function closeResultModal() {
-      document.getElementById("resultModalBg").style.display = "none";
-    }
+  function startGame() {
+    if (gameRunning) return;
 
-    function endGame() {
-      gameRunning = false;
-      clearInterval(gameInterval);
-      startBtn.disabled = false;
+    score = 0;
+    total = 0;
+    scoreDisplay.textContent = 0;
+    totalDisplay.textContent = 0;
 
-      const accuracy = total > 0 ? (score / total) * 100 : 0;
-      let label = "";
+    gameRunning = true;
+    startBtn.disabled = true;
+    leaderboardBtn.style.display = "none";
 
-      if (accuracy > 99) label = "Gay.. Gå här ifrån";
-      else if (accuracy > 80) label = "🍹 Du är nykter som en nunna!";
-      else if (accuracy > 50) label = "🍺 Lite vinglig!";
-      else label = "🤪 Taxi kanske?";
+    gameInterval = setInterval(spawnBoat, 700);
+    setTimeout(endGame, 15000);
+  }
 
-      showResultModal(label, accuracy);
+  function showResultModal(label, accuracy) {
+    document.getElementById("resultLabel").textContent = label;
+    document.getElementById("resultPercent").textContent = accuracy.toFixed(0) + "%";
+    document.getElementById("resultOverlay").style.display = "flex";
+  }
 
-      saveScore(accuracy, label);
+  function closeResult() {
+    document.getElementById("resultOverlay").style.display = "none";
+  }
 
-      // Show leaderboard button
-      leaderboardBtn.style.display = "inline-block";
-    }
+  // ---------- END GAME ----------
+  async function endGame() {
+    gameRunning = false;
+    clearInterval(gameInterval);
+    startBtn.disabled = false;
 
-    /* ------------------------- LEADERBOARD ------------------------------ */
-    function saveScore(accuracy, label) {
-      let scores = JSON.parse(localStorage.getItem("alkotestScores") || "[]");
-      scores.push({
-        accuracy: accuracy,
+    const accuracy = total > 0 ? (score / total) * 100 : 0;
+
+    let label = "";
+    if (accuracy > 99) label = "Gay.. Gå här ifrån";
+    else if (accuracy > 80) label = "🍹 Du är nykter som en nunna!";
+    else if (accuracy > 50) label = "🍺 Lite vinglig!";
+    else label = "🤪 Taxi kanske?";
+
+    showResultModal(label, accuracy);
+
+    await saveScore(accuracy, label);
+
+    leaderboardBtn.style.display = "inline-block";
+  }
+
+  // ---------- SAVE TO SHEETY ----------
+  async function saveScore(accuracy, label) {
+    const entry = {
+      alkotest: {
+        score: accuracy,
         label: label,
-        timestamp: Date.now()
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry)
       });
-      localStorage.setItem("alkotestScores", JSON.stringify(scores));
+    } catch (err) {
+      console.error("FAILED TO SAVE SCORE", err);
     }
+  }
 
-    function openLeaderboard() {
-      const modal = document.getElementById("leaderboardModalBg");
-      const table = document.getElementById("leaderboardTable");
+  // ---------- OPEN LEADERBOARD ----------
+  async function openLeaderboard() {
+    document.getElementById("leaderboardOverlay").style.display = "flex";
 
-      let scores = JSON.parse(localStorage.getItem("alkotestScores") || "[]");
+    const list = document.getElementById("leaderboardList");
+    list.innerHTML = "⏳ Laddar...";
 
-      // Sort by best accuracy
-      scores.sort((a, b) => b.accuracy - a.accuracy);
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      const key = Object.keys(data)[0];
+      const scores = data[key];
 
-      table.innerHTML = `
-        <tr><th>#</th><th>Resultat</th><th>Träff%</th><th>Datum</th></tr>
-      `;
+      scores.sort((a,b) => b.score - a.score);
+
+      list.innerHTML = "";
 
       scores.forEach((s, i) => {
-        const date = new Date(s.timestamp).toLocaleString("sv-SE");
-
-        table.innerHTML += `
-          <tr class="rank-${i+1}">
-            <td>${i+1}</td>
-            <td>${s.label}</td>
-            <td>${s.accuracy.toFixed(0)}%</td>
-            <td>${date}</td>
-          </tr>
+        list.innerHTML += `
+          <div class="leaderboard-item">
+            <strong>#${i+1}</strong> — ${s.score.toFixed(0)}%  
+            <br><small>${s.label}</small>
+          </div>
         `;
       });
 
-      modal.style.display = "flex";
+    } catch (e) {
+      list.innerHTML = "Kunde inte hämta leaderboard 😢";
     }
+  }
 
-    function closeLeaderboard() {
-      document.getElementById("leaderboardModalBg").style.display = "none";
-    }
-  </script>
+  function closeLeaderboard() {
+    document.getElementById("leaderboardOverlay").style.display = "none";
+  }
+
+  startBtn.addEventListener("click", startGame);
+</script>
 
 </body>
 </html>
