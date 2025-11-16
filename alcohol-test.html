@@ -46,6 +46,7 @@
       user-select: none;
       transition: transform 0.1s;
     }
+
     .boat:active {
       transform: scale(0.9);
     }
@@ -61,12 +62,13 @@
       cursor: pointer;
       font-size: 1em;
     }
+
     button:hover {
       background: #0059b3;
     }
 
-    /* Modal background */
-    #resultModalBg {
+    /* ---------- MODAL OVERLAYS ---------- */
+    .modal-bg {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.6);
@@ -77,19 +79,18 @@
       z-index: 999;
     }
 
-    /* Modal window */
-    #resultModalBg .modal {
+    .modal {
       background: #22252f;
       padding: 25px;
       border-radius: 12px;
       width: 90%;
-      max-width: 380px;
+      max-width: 420px;
       text-align: center;
       box-shadow: 0 4px 20px rgba(0,0,0,0.6);
       animation: fadeIn 0.25s ease-out;
     }
 
-    #resultModalBg h2 {
+    .modal h2 {
       margin-top: 0;
       color: #ffd700;
     }
@@ -102,6 +103,21 @@
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.9); }
       to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ---------- Leaderboard Table ---------- */
+    table {
+      width: 100%;
+      color: #fff;
+      margin-top: 15px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    th {
+      color: #ffd700;
     }
   </style>
 </head>
@@ -130,14 +146,37 @@
     </div>
   </div>
 
+  <!-- LEADERBOARD MODAL -->
+  <div class="modal-bg" id="leaderboardModalBg">
+    <div class="modal">
+      <h2>🏆 Leaderboard</h2>
+      <p>Högsta träffsäkerhet från alla spelare</p>
+
+      <table id="leaderboardTable">
+        <thead>
+          <tr>
+            <th>Plats</th>
+            <th>Spelare</th>
+            <th>Träff%</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <button class="close-btn" onclick="closeLeaderboard()">Stäng</button>
+    </div>
+  </div>
+
 <script>
   const gameArea = document.getElementById('gameArea');
   const scoreDisplay = document.getElementById('score');
   const totalDisplay = document.getElementById('total');
   const resultModalBg = document.getElementById('resultModalBg');
+  const leaderboardModalBg = document.getElementById('leaderboardModalBg');
   const resultTitle = document.getElementById('resultTitle');
   const resultDetails = document.getElementById('resultDetails');
   const startBtn = document.getElementById('startBtn');
+  const leaderboardTable = document.querySelector("#leaderboardTable tbody");
 
   const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
 
@@ -160,7 +199,6 @@
 
   resizeGameArea();
   window.addEventListener("resize", resizeGameArea);
-  window.addEventListener("orientationchange", resizeGameArea);
 
   /* ---------------------- SPAWN BOATS ---------------------- */
 
@@ -195,7 +233,6 @@
 
     gameArea.appendChild(boat);
 
-    // Remove after 1.5 seconds
     setTimeout(() => {
       if (gameArea.contains(boat)) boat.remove();
     }, 1500);
@@ -234,7 +271,6 @@
     else label = "🤪 Taxi kanske?";
 
     showResultModal(label, accuracy);
-
     await saveScore(accuracy, label);
   }
 
@@ -265,10 +301,50 @@
     resultModalBg.style.display = "none";
   }
 
-  /* ---------------------- LEADERBOARD BUTTON ---------------------- */
+  /* ---------------------- LEADERBOARD MODAL ---------------------- */
 
-  function openLeaderboard() {
-    window.location.href = "alkotest-leaderboard.html"; 
+  async function openLeaderboard() {
+    leaderboardModalBg.style.display = "flex";
+
+    leaderboardTable.innerHTML = "<tr><td colspan='3'>Laddar...</td></tr>";
+
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    const sheetKey = Object.keys(data)[0];
+    const players = data[sheetKey];
+
+    let ranking = [];
+
+    players.forEach(p => {
+      if (p.alkotestAccuracy) {
+        ranking.push({
+          name: p.name,
+          accuracy: Number(p.alkotestAccuracy)
+        });
+      }
+    });
+
+    ranking.sort((a,b)=>b.accuracy - a.accuracy);
+
+    leaderboardTable.innerHTML = "";
+
+    ranking.forEach((r, i) => {
+      leaderboardTable.innerHTML += `
+        <tr>
+          <td>${i+1}</td>
+          <td>${r.name}</td>
+          <td>${r.accuracy.toFixed(0)}%</td>
+        </tr>
+      `;
+    });
+
+    if(ranking.length === 0){
+      leaderboardTable.innerHTML = "<tr><td colspan='3'>Inga resultat än.</td></tr>";
+    }
+  }
+
+  function closeLeaderboard() {
+    leaderboardModalBg.style.display = "none";
   }
 
   startBtn.addEventListener('click', startGame);
