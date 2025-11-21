@@ -566,11 +566,17 @@
       const playersKey = Object.keys(playersJson)[0];
       const quizKey    = Object.keys(quizJson)[0];
 
-      const players  = playersJson[playersKey];
-      const quizRows = quizJson[quizKey];
+      const rawPlayers  = playersJson[playersKey] || [];
+      const quizRows    = quizJson[quizKey];
 
-      if (!players)  throw new Error("Inga spelare hittades");
-      if (!quizRows) throw new Error("Inga quizfrågor hittades");
+      if (!rawPlayers.length)  throw new Error("Inga spelare hittades");
+      if (!quizRows)           throw new Error("Inga quizfrågor hittades");
+
+      // 🔹 Filter out Dev account from dashboard
+      const players = rawPlayers.filter(p => {
+        const n = (p.name || "").trim().toLowerCase();
+        return n !== "dev";
+      });
 
       // Map: fråga -> rad + korrekt bokstav
       quizRows.forEach(row => {
@@ -726,7 +732,7 @@
       results.sort((a, b) => b.totalPoints - a.totalPoints);
       playerDetails = results;
 
-      // Stats
+      // Stats (utan Dev)
       document.getElementById("totalPlayers").textContent    = "👥 Spelare: " + players.length;
       document.getElementById("totalPhotos").textContent     = "📸 Bilder: " + totalPhotos;
       document.getElementById("totalQuiz").textContent       = "❓ Rätt på quiz: " + totalQuizCorrect;
@@ -791,7 +797,7 @@
       loadingEl.style.display = "none";
       tableEl.style.display   = "table";
 
-      // 👇 Sync "points" column in Blad1 with the calculated totalPoints
+      // 👇 Sync "points" column in Blad1 with the calculated totalPoints (for non-Dev players)
       syncPointsToSheet(results);
 
     } catch (err) {
@@ -802,7 +808,7 @@
     }
   }
 
-  // Uppdatera "points"-kolumnen i Blad1 för alla spelare
+  // Uppdatera "points"-kolumnen i Blad1 för alla (icke-Dev) spelare
   async function syncPointsToSheet(results) {
     for (const r of results) {
       try {
