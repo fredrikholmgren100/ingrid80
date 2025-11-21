@@ -442,6 +442,8 @@
       </div>
       <div class="modal-body">
         <div class="summary-line" id="modalSummary"></div>
+        <!-- Manuella poäng – fylls via JS -->
+        <div class="summary-line" id="manualPointsContainer"></div>
 
         <div class="modal-section-title">❓ Quiz-svar</div>
         <table class="detail-table" id="modalQuizTable">
@@ -551,7 +553,6 @@
     correctMap    = {};
 
     try {
-      // Hämta spelare + quizfrågor parallellt
       const [playersRes, quizRes] = await Promise.all([
         fetch(API_URL),
         fetch(QUIZ_API)
@@ -632,7 +633,7 @@
         const locationCorrect = locResults.filter(Boolean).length;
         const locationTotal   = LOCATION_COUNT;
 
-        // se till att approved-arrayen har rätt längd
+        // Se till att approved-arrayen har rätt längd
         const maxChallengesBase = Math.max(
           challengeBoard.length,
           challengeMarked.length,
@@ -668,11 +669,10 @@
         totalLocationsCorrect += locationCorrect;
         totalChallengesDone   += challengesApprovedCount;
 
-        // Poäng (bilder ger inga poäng)
-        const totalPoints =
-          quizCorrect * 5 +
-          locationCorrect * 3 +
-          challengesApprovedCount * 4;
+        // ---- Base & manuella poäng ----
+        const basePoints    = quizCorrect * 5 + locationCorrect * 3 + challengesApprovedCount * 4;
+        const manualPoints  = Number(pdata.manualPoints) || 0;
+        const totalPoints   = basePoints + manualPoints;
 
         // Status-pill för quiz
         let quizPillClass = "pill-none";
@@ -723,6 +723,8 @@
           challPillClass,
           challPillText,
 
+          basePoints,
+          manualPoints,
           totalPoints,
           rawData: pdata
         });
@@ -834,17 +836,65 @@
     const modal          = document.getElementById("playerModal");
     const nameEl         = document.getElementById("modalPlayerName");
     const summaryEl      = document.getElementById("modalSummary");
+    const mpContainer    = document.getElementById("manualPointsContainer");
     const quizTbody      = document.querySelector("#modalQuizTable tbody");
     const challTbody     = document.querySelector("#modalChallengeTable tbody");
     const locationTbody  = document.querySelector("#modalLocationTable tbody");
 
     nameEl.textContent = p.name;
-    summaryEl.textContent =
+
+    let summary =
       `📸 Bilder: ${p.photos}` +
       ` • ❓ Quiz: ${p.quizCorrect}/${p.quizTotal || 0} (besvarade: ${p.quizAnswered})` +
       ` • 🌍 Plats: ${p.locationCorrect}/${p.locationTotal}` +
-      ` • 🧩 Utmaningar (godkända): ${p.challengesApprovedCount}/${p.challengesTotal || 0}` +
-      ` • Totalt: ${p.totalPoints} poäng`;
+      ` • 🧩 Utmaningar (godkända): ${p.challengesApprovedCount}/${p.challengesTotal || 0}`;
+    if (p.manualPoints) {
+      summary += ` • Manuella poäng: ${p.manualPoints}`;
+    }
+    summary += ` • Totalt: ${p.totalPoints} poäng`;
+    summaryEl.textContent = summary;
+
+    // --- Manuella poäng UI ---
+    mpContainer.innerHTML = "";
+    const currentManual = p.manualPoints || 0;
+
+    if (isJudge) {
+      const label = document.createElement("span");
+      label.textContent = "Manuella poäng (bonus/avdrag): ";
+
+      const input = document.createElement("input");
+      input.type = "number";
+      input.value = currentManual;
+      input.style.width = "70px";
+      input.style.marginLeft = "4px";
+
+      const btn = document.createElement("button");
+      btn.textContent = "Spara";
+      btn.style.marginLeft = "6px";
+      btn.style.padding   = "2px 8px";
+      btn.style.borderRadius = "8px";
+      btn.style.border    = "none";
+      btn.style.cursor    = "pointer";
+      btn.style.fontSize  = "0.8em";
+      btn.style.background = "#6C63FF";
+      btn.style.color      = "#fff";
+
+      btn.addEventListener("click", () => {
+        const newVal = parseInt(input.value, 10);
+        const safeVal = isNaN(newVal) ? 0 : newVal;
+        saveManualPoints(p, safeVal);
+      });
+
+      mpContainer.appendChild(label);
+      mpContainer.appendChild(input);
+      mpContainer.appendChild(btn);
+    } else {
+      if (currentManual !== 0) {
+        mpContainer.textContent = `Manuella poäng: ${currentManual}`;
+      } else {
+        mpContainer.textContent = "";
+      }
+    }
 
     // --- Quiz-detaljer ---
     quizTbody.innerHTML = "";
@@ -1018,6 +1068,49 @@
     document.getElementById("playerModal").style.display = "none";
   }
 
+  // Spara manuella poäng för en spelare (endast Dev)
+  async function saveManualPoints(playerObj, newManualPoints) {
+    try {
+      if (!isJudge) return;
+
+      const idx = playerDetails.findIndex(p => p.id === playerObj.id);
+      if (idx === -1) return;
+
+      const p = playerDetails[idx];
+
+      // uppdatera i rawData
+      p.rawData.manualPoints = newManualPoints;
+      p.manualPoints = newManualPoints;
+
+      const basePoints =
+        p.quizCorrect * 5 +
+        p.locationCorrect * 3 +
+        p.challengesApprovedCount * 4;
+
+      p.totalPoints = basePoints + newManualPoints;
+
+      // PUT till Sheety: uppdatera data + points-kolumn
+      await fetch(`${API_URL}/${p.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blad1: {
+            data: JSON.stringify(p.rawData),
+            points: p.totalPoints
+          }
+        })
+      });
+
+      // Ladda om tabellen + öppna samma spelare igen
+      await loadData();
+      const newIndex = playerDetails.findIndex(x => x.id === p.id);
+      if (newIndex !== -1) showPlayerDetails(newIndex);
+    } catch (err) {
+      console.error("Fel vid uppdatering av manuella poäng:", err);
+      alert("Kunde inte spara manuella poäng. Prova igen.");
+    }
+  }
+
   // Toggle domargodkännande av utmaning
   async function toggleChallengeApproval(playerObj, challengeIndex) {
     try {
@@ -1041,19 +1134,24 @@
       const approvedCount = approvedArray.filter(Boolean).length;
       p.challengesApprovedCount = approvedCount;
 
+      const manualPoints = Number(p.rawData.manualPoints) || 0;
+
       // räkna om totalpoängen för just denna spelare (utan bilder)
-      p.totalPoints =
+      const basePoints =
         p.quizCorrect * 5 +
         p.locationCorrect * 3 +
         approvedCount * 4;
 
-      // PUT till Sheety (data-fältet)
+      p.totalPoints = basePoints + manualPoints;
+
+      // PUT till Sheety (data-fältet + points-kolumn)
       await fetch(`${API_URL}/${p.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           blad1: {
-            data: JSON.stringify(p.rawData)
+            data: JSON.stringify(p.rawData),
+            points: p.totalPoints
           }
         })
       });
