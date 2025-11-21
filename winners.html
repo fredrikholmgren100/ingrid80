@@ -22,6 +22,11 @@
       color: white;
       text-align: center;
       height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
     }
     .background {
       position: fixed;
@@ -33,13 +38,34 @@
       filter: brightness(0.5) blur(3px);
       z-index: -1;
     }
+
     h1 {
-      margin-top: 60px;
-      font-size: 2.2em;
+      font-size: 3em;
       color: var(--gold);
       letter-spacing: 1px;
-      opacity: 0;
-      animation: fadeIn 2s forwards 1s;
+      margin-bottom: 40px;
+    }
+
+    #revealBtn {
+      padding: 20px 40px;
+      font-size: 2em;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+      transition: 0.3s;
+    }
+    #revealBtn:hover {
+      transform: scale(1.08);
+    }
+
+    .winner-container {
+      margin-top: 40px;
+      width: 100%;
+      max-width: 700px;
+      display: none;
     }
 
     .winner {
@@ -47,6 +73,7 @@
       transform: scale(0.8);
       margin: 40px 0;
       transition: transform 1s ease, opacity 1s ease;
+      font-size: 2.2em;
     }
 
     .winner.visible {
@@ -60,19 +87,14 @@
     }
 
     .name {
-      font-size: 2.4em;
+      font-size: 2.8em;
       font-weight: bold;
-      text-shadow: 0 0 12px rgba(255,255,255,0.7);
+      text-shadow: none;
     }
 
     .bronze .name { color: var(--bronze); }
     .silver .name { color: var(--silver); }
     .gold .name { color: var(--gold); }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(40px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
 
     @keyframes confetti {
       0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
@@ -81,8 +103,7 @@
 
     .confetti {
       position: fixed;
-      width: 10px; height: 10px;
-      background: var(--gold);
+      width: 12px; height: 12px;
       top: 0; left: 50%;
       opacity: 0;
       animation: confetti 3s ease-out forwards;
@@ -94,93 +115,327 @@
       width: 100%;
       text-align: center;
       color: #ccc;
-      font-size: 1em;
-      opacity: 0;
-      animation: fadeIn 2s forwards 10s;
+      font-size: 1.2em;
+    }
+
+    /* 🔹 Other players: centered between left edge and winners, same height */
+    #others {
+      position: fixed;
+      top: 50%;
+      left: 25%; /* halfway between 0% and 50% */
+      transform: translate(-50%, -50%);
+      text-align: left;
+      font-size: 1.1em;
+      display: none;
+      max-width: 280px;
+      z-index: 1;
+    }
+
+    .others-title {
+      font-size: 1.5em;
+      margin-bottom: 10px;
+      color: #FFD700;
+    }
+
+    .others-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .others-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      margin-bottom: 6px;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    }
+
+    .others-rank {
+      opacity: 0.85;
+      min-width: 50px;
+    }
+
+    .others-name {
+      font-weight: 600;
+      flex: 1;
+      margin: 0 6px;
+    }
+
+    .others-points {
+      color: #FFD700;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 600px) {
+      #others {
+        font-size: 1em;
+        max-width: 230px;
+        left: 30%;
+      }
+    }
+
+    /* 🔹 Hacking overlay */
+    .hack-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      font-family: "Consolas", "Courier New", monospace;
+    }
+
+    .hack-box {
+      width: 90%;
+      max-width: 500px;
+      background: #050810;
+      border: 1px solid #00ff88;
+      border-radius: 8px;
+      padding: 18px 20px;
+      box-shadow: 0 0 18px rgba(0, 255, 136, 0.4);
+      color: #00ff88;
+    }
+
+    .hack-title {
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 1.1em;
+    }
+
+    .hack-progress-bar {
+      width: 100%;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(0, 255, 136, 0.12);
+      overflow: hidden;
+      margin: 10px 0 14px;
+      border: 1px solid rgba(0,255,136,0.6);
+    }
+
+    .hack-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00ff88, #00ffaa);
+      transition: width 0.2s linear;
+    }
+
+    .hack-log {
+      font-size: 0.95em;
+      max-height: 120px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .hack-log-line {
+      margin-bottom: 4px;
+      white-space: nowrap;
     }
   </style>
 </head>
 <body>
   <div class="background"></div>
+
   <h1>🏆 Och vinnarna är...</h1>
 
-  <div id="bronze" class="winner bronze">
-    <div class="place">🥉 3:e plats</div>
-    <div class="name">...</div>
+  <button id="revealBtn">Klicka för att visa 3:e plats</button>
+
+  <div class="winner-container" id="winnersBox" style="display:none;">
+    <div id="bronze" class="winner bronze">
+      <div class="place">🥉 3:e plats</div>
+      <div class="name">...</div>
+    </div>
+    <div id="silver" class="winner silver">
+      <div class="place">🥈 2:a plats</div>
+      <div class="name">...</div>
+    </div>
+    <div id="gold" class="winner gold">
+      <div class="place">🥇 1:a plats</div>
+      <div class="name">...</div>
+    </div>
   </div>
-  <div id="silver" class="winner silver">
-    <div class="place">🥈 2:a plats</div>
-    <div class="name">...</div>
-  </div>
-  <div id="gold" class="winner gold">
-    <div class="place">🥇 1:a plats</div>
-    <div class="name">...</div>
+
+  <!-- 🔹 Other players list -->
+  <div id="others"></div>
+
+  <!-- 🔹 Hacking overlay -->
+  <div class="hack-overlay" id="hackOverlay">
+    <div class="hack-box">
+      <div class="hack-title">[ ACCESSING VIKING LINE SYSTEMS... ]</div>
+      <div class="hack-progress-bar">
+        <div class="hack-progress-fill" id="hackProgressFill"></div>
+      </div>
+      <div class="hack-log" id="hackLog"></div>
+    </div>
   </div>
 
   <footer>🎉 Grattis till alla deltagare! Tack för att ni firade Ingrid 80! 🎂</footer>
 
   <script>
-    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
 
-    async function fetchWinners() {
-      let res = await fetch(API_URL);
-      let data = await res.json();
-      let sheetKey = Object.keys(data)[0];
-      let players = data[sheetKey];
-      if (!players) return [];
+  let allRanked = [];
+  let step = 0;
 
-      let results = [];
+  async function loadResults() {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    const sheetKey = Object.keys(data)[0];
+    const players = data[sheetKey] || [];
 
-      players.forEach(p => {
-        let photos = 0, bingo = 0, location = 0;
-        if (p.gallery) {
-          try { photos = JSON.parse(p.gallery).length; }
-          catch { photos = 1; }
-        }
-        let pdata = {};
-        try { pdata = JSON.parse(p.data || "{}"); } catch {}
-        if (pdata.bingoMarked) bingo = pdata.bingoMarked.filter(x => x).length / 4;
-        if (pdata.correctGuesses) location = pdata.correctGuesses.length || pdata.correctGuesses;
+    const results = players.map(p => {
+      let photos = 0;
+      let pdata = {};
+      try { photos = p.gallery ? JSON.parse(p.gallery).length : 0; } catch {}
+      try { pdata = JSON.parse(p.data || "{}"); } catch {}
 
-        let totalPoints = photos * 1 + bingo * 5 + location * 2;
-        results.push({ name: p.name, totalPoints });
-      });
+      // --- Quiz scoring ---
+      const quizAnswers = Array.isArray(pdata.quizAnswers) ? pdata.quizAnswers : [];
+      const quizCorrect = quizAnswers.filter(a => a && a.answer === (pdata.correctMap ? pdata.correctMap[a.questionId] : null)).length;
 
-      results.sort((a,b)=>b.totalPoints - a.totalPoints);
-      return results.slice(0, 3);
+      // --- Location scoring ---
+      const guessLoc = pdata.guessLocation || {};
+      const locResults = Array.isArray(guessLoc.results) ? guessLoc.results : [];
+      const locationCorrect = locResults.filter(Boolean).length;
+
+      // --- Challenges scoring ---
+      const challengeApproved = Array.isArray(pdata.challengeApproved) ? pdata.challengeApproved : [];
+      const challengesApprovedCount = challengeApproved.filter(Boolean).length;
+
+      // --- Total points ---
+      const totalPoints = quizCorrect * 5 + locationCorrect * 3 + challengesApprovedCount * 4;
+
+      return { name: p.name, totalPoints };
+    });
+
+    results.sort((a,b)=>b.totalPoints - a.totalPoints);
+    return results;
+  }
+
+  function revealTop3() {
+    const top3 = allRanked.slice(0,3);
+    document.querySelector("#bronze .name").textContent = `${top3[2].name} (${top3[2].totalPoints} p)`;
+    document.querySelector("#silver .name").textContent = `${top3[1].name} (${top3[1].totalPoints} p)`;
+    document.querySelector("#gold .name").textContent = `${top3[0].name} (${top3[0].totalPoints} p)`;
+  }
+
+  function showOthers() {
+    const othersDiv = document.getElementById("others");
+    const others = allRanked.slice(3);
+    if (!others.length) return;
+
+    othersDiv.style.display = "block";
+    othersDiv.innerHTML = `
+      <div class="others-title">Övriga deltagare</div>
+      <ul class="others-list">
+        ${others.map((p,i)=> `
+          <li>
+            <span class="others-rank">#${i+4}</span>
+            <span class="others-name">${p.name}</span>
+            <span class="others-points">${p.totalPoints} p</span>
+          </li>
+        `).join("")}
+      </ul>
+    `;
+  }
+
+  function dropConfetti() {
+    for (let i = 0; i < 120; i++) {
+      const confetti = document.createElement("div");
+      confetti.className = "confetti";
+      confetti.style.left = Math.random()*100 + "%";
+      confetti.style.background = ["#FFD700","#C0C0C0","#CD7F32","#6C63FF"][Math.floor(Math.random()*4)];
+      confetti.style.animationDelay = Math.random() * 1 + "s";
+      document.body.appendChild(confetti);
+      setTimeout(()=>confetti.remove(), 3500);
     }
+  }
 
-    async function revealWinners() {
-      const winners = await fetchWinners();
-      if (winners.length < 3) return;
+  // 🔹 Fake hacking sequence (10 seconds)
+  function startHackingSequence(onDone) {
+    const overlay = document.getElementById("hackOverlay");
+    const log = document.getElementById("hackLog");
+    const fill = document.getElementById("hackProgressFill");
 
-      // Assign names
-      document.querySelector("#bronze .name").textContent = winners[2].name;
-      document.querySelector("#silver .name").textContent = winners[1].name;
-      document.querySelector("#gold .name").textContent = winners[0].name;
+    overlay.style.display = "flex";
+    log.innerHTML = "";
+    fill.style.width = "0%";
 
-      // Animate reveals with suspense delays
-      setTimeout(()=>document.getElementById("bronze").classList.add("visible"), 2500);
-      setTimeout(()=>document.getElementById("silver").classList.add("visible"), 4500);
-      setTimeout(()=>{
+    const messages = [
+      "Accessing data...",
+      "Hacking Viking Line database...",
+      "Decrypting secret cabin lists...",
+      "Adding cheating points...",
+      "Recalculating leaderboards...",
+      "Almost done...",
+      "Done! Showing final winner..."
+    ];
+
+    const totalDuration = 10000; // 10 seconds
+    const tick = 200;            // progress update every 0.2s
+    let elapsed = 0;
+
+    // Show messages at evenly spaced intervals
+    messages.forEach((msg, i) => {
+      const t = (totalDuration / (messages.length)) * i;
+      setTimeout(() => {
+        const line = document.createElement("div");
+        line.className = "hack-log-line";
+        line.textContent = msg;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }, t);
+    });
+
+    const progressTimer = setInterval(() => {
+      elapsed += tick;
+      let progress = Math.min(100, (elapsed / totalDuration) * 100);
+      fill.style.width = progress + "%";
+      if (elapsed >= totalDuration) {
+        clearInterval(progressTimer);
+        setTimeout(() => {
+          overlay.style.display = "none";
+          if (typeof onDone === "function") onDone();
+        }, 400); // tiny pause after 100%
+      }
+    }, tick);
+  }
+
+  document.getElementById("revealBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("revealBtn");
+
+    if (step === 0) {
+      allRanked = await loadResults();
+      if (allRanked.length < 3) return;
+
+      revealTop3();
+      document.getElementById("winnersBox").style.display = "block";
+      document.getElementById("bronze").classList.add("visible");
+      btn.textContent = "Visa 2:a plats";
+      step = 1;
+
+    } else if (step === 1) {
+      document.getElementById("silver").classList.add("visible");
+      btn.textContent = "Visa vinnaren!";
+      step = 2;
+
+    } else if (step === 2) {
+      // 🔹 Start hacking joke instead of showing winner immediately
+      btn.disabled = true;
+      startHackingSequence(() => {
         document.getElementById("gold").classList.add("visible");
         dropConfetti();
-      }, 7000);
+        btn.style.display = "none";
+        step = 3;
+        setTimeout(showOthers, 3000);
+      });
     }
-
-    function dropConfetti() {
-      for (let i = 0; i < 100; i++) {
-        const confetti = document.createElement("div");
-        confetti.className = "confetti";
-        confetti.style.left = Math.random()*100 + "%";
-        confetti.style.background = ["#FFD700","#C0C0C0","#CD7F32","#6C63FF"][Math.floor(Math.random()*4)];
-        confetti.style.animationDelay = Math.random() * 1 + "s";
-        document.body.appendChild(confetti);
-        setTimeout(()=>confetti.remove(), 3000);
-      }
-    }
-
-    revealWinners();
+  });
   </script>
 </body>
 </html>
