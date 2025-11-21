@@ -219,10 +219,10 @@
       const accuracy = total > 0 ? (score / total) * 100 : 0;
       let label = "";
 
-      if (accuracy > 99) label = "Gay.. Gå här ifrån";
+      if (accuracy > 99) label = "Mäh.. Gå här ifrån";
       else if (accuracy > 80) label = "🍹 Nykter som en nunna!";
-      else if (accuracy > 50) label = "🍺 Lite vinglig!";
-      else label = "🤪 Ta en taxi hem...";
+      else if (accuracy > 50) label = "🍺 Lite vinglig här tror jag?";
+      else label = "Ta en taxi hem... you drunk";
 
       popupTitle.textContent = label;
       popupScore.textContent = `Träff: ${score} av ${total} (${accuracy.toFixed(0)}%)`;
@@ -304,3 +304,4 @@
 
 </body>
 </html>
+
