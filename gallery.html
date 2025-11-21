@@ -282,12 +282,20 @@
       loadGallery();
     }
 
-    function goBack() {
-      if (window.history.length > 1) window.history.back();
-      else window.location.href = "index.html";
-    }
+function goBack() {
+  if (playerId) {
+    window.location.href = "play.html?id=" + encodeURIComponent(playerId);
+  } else if (window.history.length > 1) {
+    // fallback: use browser history if available
+    window.history.back();
+  } else {
+    // last resort: go to login
+    window.location.href = "index.html";
+  }
+}
 
     loadGallery();
   </script>
 </body>
 </html>
+
