@@ -12,33 +12,36 @@
       --bg-pos-x: 50%;
       --bg-pos-y: 50%;
     }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', Arial, sans-serif;
       background-color: #1d1f27;
       color: #fff;
-      overflow-x: hidden;
       min-height: 100vh;
+      overflow-x: hidden;
     }
+
     .background {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      inset: 0;
       background: url("letsboat-bg.png") center center no-repeat;
       background-size: var(--bg-zoom);
       background-position: var(--bg-pos-x) var(--bg-pos-y);
       filter: brightness(0.6) blur(4px);
       z-index: -1;
     }
+
     header {
+      position: relative;
       text-align: center;
-      padding: 25px;
+      padding: 24px 16px;
       font-size: 2em;
       font-weight: bold;
       color: var(--gold);
       letter-spacing: 1px;
-      position: relative;
     }
+
     .refresh {
       position: absolute;
       right: 20px;
@@ -48,126 +51,161 @@
       color: white;
       border: none;
       border-radius: 8px;
-      padding: 10px 15px;
+      padding: 8px 14px;
       font-weight: bold;
       cursor: pointer;
+      font-size: 0.9em;
     }
+
     .refresh:hover {
       background: #5850f0;
     }
+
     .container {
       max-width: 1100px;
-      margin: auto;
-      background: rgba(42,45,56,0.65);
+      margin: 0 auto 24px auto;
+      background: rgba(42,45,56,0.7);
       backdrop-filter: blur(10px);
       border-radius: 16px;
-      padding: 25px;
+      padding: 20px 20px 24px;
       box-shadow: 0 4px 25px rgba(0,0,0,0.4);
     }
+
     .stats {
       display: flex;
-      justify-content: space-around;
       flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
       margin-bottom: 20px;
       text-align: center;
-      gap: 10px;
     }
+
     .stat {
       background: rgba(0,0,0,0.25);
-      padding: 15px 25px;
+      padding: 12px 18px;
       border-radius: 12px;
-      margin: 10px;
-      min-width: 150px;
-      font-size: 1.1em;
+      min-width: 160px;
+      font-size: 1.05em;
     }
-    .leaderboard {
-      margin-top: 20px;
-      border-collapse: collapse;
+
+    h2 {
+      color: var(--gold);
+      margin: 0 0 8px 0;
+      text-align: center;
+    }
+
+    .loading,
+    .error {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 0.95em;
+    }
+
+    .error {
+      color: #ff7373;
+    }
+
+    .table-wrapper {
       width: 100%;
+      margin-top: 10px;
+      overflow-x: auto;
     }
-    .leaderboard th, .leaderboard td {
-      padding: 10px 14px;
+
+    .leaderboard {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+
+    .leaderboard th,
+    .leaderboard td {
+      padding: 8px 10px;
       border-bottom: 1px solid rgba(255,255,255,0.15);
       text-align: left;
-      white-space: nowrap;
+      font-size: 0.9em;
     }
+
     .leaderboard th {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.11);
       color: var(--gold);
     }
+
     .leaderboard tr:hover {
       background: rgba(255,255,255,0.05);
     }
+
     .player-row {
       cursor: pointer;
     }
+
     .player-row:hover {
       background: rgba(108, 99, 255, 0.2);
     }
+
     .rank {
       text-align: center;
       font-weight: bold;
     }
+
     .total-cell {
       font-weight: bold;
     }
+
     .total-gold   { color: gold; }
     .total-silver { color: silver; }
     .total-bronze { color: #cd7f32; }
 
     .pill {
       display: inline-block;
-      padding: 2px 8px;
+      padding: 2px 7px;
       border-radius: 999px;
-      font-size: 0.75em;
+      font-size: 0.72em;
       margin-left: 6px;
       border: 1px solid rgba(255,255,255,0.2);
       background: rgba(0,0,0,0.3);
     }
+
     .pill-done {
       background: rgba(0,200,83,0.2);
       border-color: rgba(0,230,118,0.9);
       color: #b9ffcf;
     }
+
     .pill-partial {
       background: rgba(255,193,7,0.2);
       border-color: rgba(255,214,0,0.9);
       color: #ffeaa7;
     }
+
     .pill-none {
       background: rgba(244,67,54,0.2);
       border-color: rgba(244,67,54,0.9);
       color: #ffcdd2;
     }
 
-    .loading, .error {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 0.95em;
-    }
-    .error {
-      color: #ff7373;
-    }
-
     footer {
-      margin-top: 30px;
+      margin: 0 auto 18px auto;
+      max-width: 1100px;
       text-align: center;
       color: #ccc;
       font-size: 0.9em;
+      padding: 0 16px;
     }
 
-    /* --- Modal for player details --- */
+    /* --- Modal --- */
     .modal {
       position: fixed;
       inset: 0;
       display: none;
       z-index: 1000;
     }
+
     .modal-backdrop {
       position: absolute;
       inset: 0;
       background: rgba(0,0,0,0.6);
     }
+
     .modal-content {
       position: absolute;
       top: 50%;
@@ -175,14 +213,15 @@
       transform: translate(-50%, -50%);
       width: min(1000px, 95vw);
       max-height: 85vh;
-      background: rgba(20,23,35,0.96);
+      background: rgba(20,23,35,0.97);
       border-radius: 16px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.7);
-      padding: 18px 22px 20px;
-      overflow: hidden;
+      padding: 16px 18px 18px;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
+
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -190,11 +229,13 @@
       gap: 10px;
       margin-bottom: 6px;
     }
+
     .modal-title {
       font-size: 1.3em;
       font-weight: bold;
       color: var(--gold);
     }
+
     .modal-close {
       background: transparent;
       color: #fff;
@@ -202,16 +243,19 @@
       font-size: 1.3em;
       cursor: pointer;
     }
+
     .modal-body {
       overflow-y: auto;
       padding-right: 4px;
     }
+
     .modal-section-title {
       margin-top: 10px;
       margin-bottom: 5px;
       font-size: 1.05em;
       color: #ffd700;
     }
+
     .summary-line {
       font-size: 0.95em;
       color: #ddd;
@@ -224,23 +268,28 @@
       font-size: 0.9em;
       margin-bottom: 12px;
     }
+
     .detail-table th,
     .detail-table td {
       padding: 6px 8px;
       border-bottom: 1px solid rgba(255,255,255,0.15);
       vertical-align: top;
     }
+
     .detail-table th {
       background: rgba(255,255,255,0.08);
     }
+
     .answer-correct {
       color: #b9ffcf;
       font-weight: bold;
     }
+
     .answer-wrong {
       color: #ffb3b3;
       font-weight: bold;
     }
+
     .badge-small {
       display: inline-block;
       padding: 1px 6px;
@@ -250,25 +299,98 @@
       border: 1px solid rgba(255,255,255,0.25);
       background: rgba(0,0,0,0.3);
     }
+
     .badge-ok {
       border-color: #00e676;
       color: #b9ffcf;
       background: rgba(0,200,83,0.2);
     }
+
     .badge-fail {
       border-color: #ff5252;
       color: #ffcdd2;
       background: rgba(244,67,54,0.2);
     }
+
     .evidence-link {
       color: #90caf9;
       text-decoration: underline;
       cursor: pointer;
     }
+
+/* ---------- Mobile tweaks ---------- */
+@media (max-width: 768px) {
+
+  .refresh {
+    position: static;
+    transform: none;
+    margin: 8px auto 0;
+    display: inline-block;
+    padding: 6px 10px;
+    font-size: 0.8em;
+  }
+
+  .container {
+    margin: 0 10px 18px;
+    padding: 14px 12px 18px;
+    border-radius: 14px;
+  }
+
+  .stats {
+    flex-direction: column;
+    align-items: center;      /* center the stat cards */
+  }
+
+  .stat {
+    width: 80%;               /* not full width */
+    max-width: 260px;         /* limit size */
+    margin: 0 auto;           /* center horizontally */
+    font-size: 0.95em;
+    padding: 10px 10px;
+    text-align: center;
+  }
+
+  .leaderboard th,
+  .leaderboard td {
+    padding: 6px 6px;
+    font-size: 0.8em;
+  }
+
+  .leaderboard th:nth-child(2),
+  .leaderboard td:nth-child(2) {
+    white-space: normal;
+  }
+
+  footer {
+    font-size: 0.8em;
+  }
+
+  .modal-content {
+    width: 94vw;
+    max-height: 85vh;
+    padding: 12px 10px 14px;
+  }
+
+  .modal-title {
+    font-size: 1.1em;
+  }
+
+  .summary-line {
+    font-size: 0.85em;
+  }
+
+  .detail-table th,
+  .detail-table td {
+    font-size: 0.8em;
+    padding: 4px 5px;
+  }
+}
+
   </style>
 </head>
 <body>
   <div class="background"></div>
+
   <header>
     Ingrid 80 — Event Dashboard
     <button class="refresh" onclick="loadData()">🔁 Uppdatera</button>
@@ -283,24 +405,26 @@
       <div class="stat" id="totalChallenges">🧩 Godkända utmaningar: --</div>
     </div>
 
-    <h2 style="color:var(--gold);">🏆 Ledartavla</h2>
+    <h2>🏆 Ledartavla</h2>
     <div class="loading" id="loading">Laddar data…</div>
     <div class="error" id="error" style="display:none;"></div>
 
-    <table class="leaderboard" id="leaderboard" style="display:none;">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Namn</th>
-          <th>Bilder</th>
-          <th>Quiz</th>
-          <th>Plats</th>
-          <th>Utmaningar</th>
-          <th>Totalt</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrapper">
+      <table class="leaderboard" id="leaderboard" style="display:none;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Namn</th>
+            <th>Bilder</th>
+            <th>Quiz</th>
+            <th>Plats</th>
+            <th>Utmaningar</th>
+            <th>Totalt</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <footer>
@@ -345,7 +469,7 @@
           <tbody></tbody>
         </table>
 
-        <div class="modal-section-title">🧩 Utmaningar</div>
+        <div class="modal-section-title" id="modalChallengeTitle">🧩 Utmaningar</div>
         <table class="detail-table" id="modalChallengeTable">
           <thead>
             <tr>
@@ -365,7 +489,6 @@
   const API_URL  = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
   const QUIZ_API = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/quizQuestions";
 
-  // Samma antal platser som i Gissa Orten-spelet
   const LOCATION_COUNT = 5;
   const LOCATION_META = [
     { label: "Surahammar" },
@@ -375,9 +498,10 @@
     { label: "Bräcke" }
   ];
 
-  let questionMap   = {};   // questionId -> question row
-  let correctMap    = {};   // questionId -> correct letter
-  let playerDetails = [];   // all processed players
+  let questionMap   = {};
+  let correctMap    = {};
+  let playerDetails = [];
+  let isJudge       = false; // only true for "Dev"
 
   function letterToText(q, letter) {
     if (!q) return "";
@@ -387,6 +511,28 @@
       case "C": return q.optionC;
       case "D": return q.optionD;
       default:  return "";
+    }
+  }
+
+  // Detect if current viewer is the judge "Dev" based on ?id=...
+  async function detectJudge() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const currentId = params.get("id");
+      if (!currentId) return;
+
+      const res = await fetch(`${API_URL}/${currentId}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      const key = Object.keys(json)[0];
+      const row = json[key];
+
+      const name = (row && row.name ? row.name : "").trim().toLowerCase();
+      if (name === "dev") {
+        isJudge = true;
+      }
+    } catch (e) {
+      console.error("Kunde inte avgöra judge-status:", e);
     }
   }
 
@@ -405,7 +551,6 @@
     correctMap    = {};
 
     try {
-      // Hämta spelare + quizfrågor parallellt
       const [playersRes, quizRes] = await Promise.all([
         fetch(API_URL),
         fetch(QUIZ_API)
@@ -426,7 +571,6 @@
       if (!players)  throw new Error("Inga spelare hittades");
       if (!quizRows) throw new Error("Inga quizfrågor hittades");
 
-      // Map: fråga -> rad + korrekt bokstav
       quizRows.forEach(row => {
         if (!row) return;
         const id = row.id;
@@ -445,25 +589,22 @@
       let totalPhotos           = 0;
       let totalQuizCorrect      = 0;
       let totalLocationsCorrect = 0;
-      let totalChallengesDone   = 0; // godkända (=approved)
+      let totalChallengesDone   = 0;
 
       let results = [];
 
       players.forEach(p => {
         let photos = 0;
 
-        // --- Bilder (gallery) – endast för statistik, inte poäng ---
         if (p.gallery) {
           try {
             const parsed = JSON.parse(p.gallery);
-            if (Array.isArray(parsed)) photos = parsed.length;
-            else photos = 1;
+            photos = Array.isArray(parsed) ? parsed.length : 1;
           } catch {
             photos = 1;
           }
         }
 
-        // --- Datafält ---
         let pdata = {};
         try { pdata = JSON.parse(p.data || "{}"); } catch {}
 
@@ -475,14 +616,12 @@
         let   challengeApproved = Array.isArray(pdata.challengeApproved) ? pdata.challengeApproved : [];
         const challengeEvidence = Array.isArray(pdata.challengeEvidence) ? pdata.challengeEvidence : [];
 
-        // Gissa Orten
         const guessLoc   = pdata.guessLocation || {};
         const locResults = Array.isArray(guessLoc.results) ? guessLoc.results : [];
         const locAnswers = Array.isArray(guessLoc.answers) ? guessLoc.answers : [];
         const locationCorrect = locResults.filter(Boolean).length;
         const locationTotal   = LOCATION_COUNT;
 
-        // se till att approved-arrayen har rätt längd
         const maxChallengesBase = Math.max(
           challengeBoard.length,
           challengeMarked.length,
@@ -495,7 +634,6 @@
         }
         pdata.challengeApproved = challengeApproved;
 
-        // --- Quiz: answered / correct ---
         let quizAnswered = 0;
         let quizCorrect  = 0;
         let quizTotal    = quizOrder.length;
@@ -509,7 +647,6 @@
           if (correct && given === correct) quizCorrect++;
         });
 
-        // --- Challenges ---
         const challengesTotal   = maxChallengesBase;
         const challengesApprovedCount = challengeApproved.filter(Boolean).length;
 
@@ -518,14 +655,11 @@
         totalLocationsCorrect += locationCorrect;
         totalChallengesDone   += challengesApprovedCount;
 
-        // --- Poäng ---
-        // OBS: bilder ger INGA poäng längre
         const totalPoints =
-          quizCorrect * 5 +            // 5 p per rätt quiz-svar
-          locationCorrect * 3 +        // 3 p per rätt plats
-          challengesApprovedCount * 4; // 4 p per godkänd utmaning
+          quizCorrect * 5 +
+          locationCorrect * 3 +
+          challengesApprovedCount * 4;
 
-        // Status-pill för quiz
         let quizPillClass = "pill-none";
         let quizPillText  = "Inte startat";
         if (quizAnswered >= quizTotal && quizTotal > 0) {
@@ -536,7 +670,6 @@
           quizPillText  = "Pågår";
         }
 
-        // Status-pill för utmaningar (approved)
         let challPillClass = "pill-none";
         let challPillText  = "Inte godkänd ännu";
         if (challengesApprovedCount >= challengesTotal && challengesTotal > 0) {
@@ -579,19 +712,15 @@
         });
       });
 
-      // Sortera efter totalpoäng
       results.sort((a, b) => b.totalPoints - a.totalPoints);
       playerDetails = results;
 
-      // Stats
       document.getElementById("totalPlayers").textContent    = "👥 Spelare: " + players.length;
       document.getElementById("totalPhotos").textContent     = "📸 Bilder: " + totalPhotos;
       document.getElementById("totalQuiz").textContent       = "❓ Rätt på quiz: " + totalQuizCorrect;
       document.getElementById("totalLocations").textContent  = "🌍 Rätt platser: " + totalLocationsCorrect;
       document.getElementById("totalChallenges").textContent = "🧩 Godkända utmaningar: " + totalChallengesDone;
 
-      // Ledartavla
-      const tbody = tableEl.querySelector("tbody");
       tbody.innerHTML = "";
       results.forEach((r, i) => {
         const tr = document.createElement("tr");
@@ -611,7 +740,6 @@
         photosTd.textContent = r.photos;
         tr.appendChild(photosTd);
 
-        // Quiz
         const quizTd = document.createElement("td");
         quizTd.textContent = `${r.quizCorrect} / ${r.quizTotal || "-"}`;
         const qp = document.createElement("span");
@@ -620,12 +748,10 @@
         quizTd.appendChild(qp);
         tr.appendChild(quizTd);
 
-        // Gissa plats
         const locTd = document.createElement("td");
         locTd.textContent = `${r.locationCorrect} / ${r.locationTotal}`;
         tr.appendChild(locTd);
 
-        // Utmaningar
         const challTd = document.createElement("td");
         challTd.textContent = `${r.challengesApprovedCount} / ${r.challengesTotal || "-"}`;
         const cp = document.createElement("span");
@@ -634,7 +760,6 @@
         challTd.appendChild(cp);
         tr.appendChild(challTd);
 
-        // Totalt
         const totalTd = document.createElement("td");
         totalTd.className = "total-cell";
         if (i === 0)      totalTd.classList.add("total-gold");
@@ -655,8 +780,6 @@
       errorEl.style.display = "block";
     }
   }
-
-  // --- Modal + deep dive ---
 
   function showPlayerDetails(index) {
     const p = playerDetails[index];
@@ -761,7 +884,7 @@
       locationTbody.appendChild(tr);
     }
 
-    // --- Utmanings-detaljer + knappar för godkännande ---
+    // --- Utmanings-detaljer (always visible, button only for Dev) ---
     challTbody.innerHTML = "";
     const maxChallenges = Math.max(
       p.challengeBoard.length,
@@ -796,7 +919,8 @@
         : `<span class="badge-small badge-fail">Ej godkänd</span>`);
       statusTd.innerHTML = statusHtml;
 
-      if (marked) {
+      // button only for judge (Dev)
+      if (marked && isJudge) {
         const btn = document.createElement("button");
         btn.textContent = approved ? "Ta bort godkännande" : "Godkänn (+4p)";
         btn.style.marginTop = "4px";
@@ -848,9 +972,10 @@
     document.getElementById("playerModal").style.display = "none";
   }
 
-  // --- Toggle domargodkännande av utmaning ---
   async function toggleChallengeApproval(playerObj, challengeIndex) {
     try {
+      if (!isJudge) return; // safety
+
       const idx = playerDetails.findIndex(p => p.id === playerObj.id);
       if (idx === -1) return;
 
@@ -869,13 +994,11 @@
       const approvedCount = approvedArray.filter(Boolean).length;
       p.challengesApprovedCount = approvedCount;
 
-      // räkna om totalpoängen för just denna spelare (utan bilder)
       p.totalPoints =
         p.quizCorrect * 5 +
         p.locationCorrect * 3 +
         approvedCount * 4;
 
-      // PUT till Sheety
       await fetch(`${API_URL}/${p.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -886,10 +1009,8 @@
         })
       });
 
-      // Ladda om hela tabellen för att uppdatera ranking & totals
       await loadData();
 
-      // Öppna samma spelare igen efter reload (smidigt för domaren)
       const newIndex = playerDetails.findIndex(x => x.id === p.id);
       if (newIndex !== -1) showPlayerDetails(newIndex);
     } catch (err) {
@@ -898,7 +1019,11 @@
     }
   }
 
-  loadData();
+  // Init: first figure out if we are Dev, then load data
+  (async function init() {
+    await detectJudge();
+    await loadData();
+  })();
 </script>
 
 </body>
