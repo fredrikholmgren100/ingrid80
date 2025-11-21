@@ -201,8 +201,35 @@
 
   <script>
     const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
-    const params = new URLSearchParams(window.location.search);
-    const playerId = params.get("id");
+
+    // Try to get playerId from URL, sessionStorage, or referrer
+    const urlParams = new URLSearchParams(window.location.search);
+    let playerId = urlParams.get("id");
+
+    if (!playerId) {
+      const storedId = sessionStorage.getItem("playerId");
+      if (storedId) {
+        playerId = storedId;
+      }
+    }
+
+    if (!playerId && document.referrer) {
+      try {
+        const refUrl = new URL(document.referrer);
+        const refId = refUrl.searchParams.get("id");
+        if (refId) {
+          playerId = refId;
+        }
+      } catch (e) {
+        console.warn("Kunde inte läsa id från referrer:", e);
+      }
+    }
+
+    // Persist the best-known playerId
+    if (playerId) {
+      sessionStorage.setItem("playerId", playerId);
+    }
+
     let currentImageUrl = "";
 
     async function loadGallery() {
@@ -236,7 +263,9 @@
       img.onclick = () => openLightbox(url);
       item.appendChild(img);
 
-      if (playerId && parseInt(playerId) === ownerId) {
+      // Only the owner can see the delete button
+      const numericPlayerId = playerId ? parseInt(playerId, 10) : null;
+      if (numericPlayerId && numericPlayerId === ownerId) {
         let delBtn = document.createElement("button");
         delBtn.textContent = "🗑";
         delBtn.className = "delete-btn";
@@ -283,14 +312,13 @@
     }
 
     function goBack() {
-      // Prefer going back to the player's page using the id from the URL
-      if (playerId) {
-        window.location.href = "play.html?id=" + encodeURIComponent(playerId);
-      } else if (window.history.length > 1) {
-        // Fallback: go back in history if possible
-        window.history.back();
+      const id = sessionStorage.getItem("playerId") || playerId;
+
+      if (id) {
+        // Always go back to the player's page
+        window.location.href = "play.html?id=" + encodeURIComponent(id);
       } else {
-        // Last resort: go to login
+        // If we somehow have no id at all, go to login
         window.location.href = "index.html";
       }
     }
