@@ -318,73 +318,73 @@
       cursor: pointer;
     }
 
-/* ---------- Mobile tweaks ---------- */
-@media (max-width: 768px) {
+    /* ---------- Mobile tweaks ---------- */
+    @media (max-width: 768px) {
 
-  .refresh {
-    position: static;
-    transform: none;
-    margin: 8px auto 0;
-    display: inline-block;
-    padding: 6px 10px;
-    font-size: 0.8em;
-  }
+      .refresh {
+        position: static;
+        transform: none;
+        margin: 8px auto 0;
+        display: inline-block;
+        padding: 6px 10px;
+        font-size: 0.8em;
+      }
 
-  .container {
-    margin: 0 10px 18px;
-    padding: 14px 12px 18px;
-    border-radius: 14px;
-  }
+      .container {
+        margin: 0 10px 18px;
+        padding: 14px 12px 18px;
+        border-radius: 14px;
+      }
 
-  .stats {
-    flex-direction: column;
-    align-items: center;      /* center the stat cards */
-  }
+      .stats {
+        flex-direction: column;
+        align-items: center;
+      }
 
-  .stat {
-    width: 80%;               /* not full width */
-    max-width: 260px;         /* limit size */
-    margin: 0 auto;           /* center horizontally */
-    font-size: 0.95em;
-    padding: 10px 10px;
-    text-align: center;
-  }
+      .stat {
+        width: 80%;
+        max-width: 260px;
+        margin: 0 auto;
+        font-size: 0.95em;
+        padding: 10px 10px;
+        text-align: center;
+      }
 
-  .leaderboard th,
-  .leaderboard td {
-    padding: 6px 6px;
-    font-size: 0.8em;
-  }
+      .leaderboard th,
+      .leaderboard td {
+        padding: 6px 6px;
+        font-size: 0.8em;
+      }
 
-  .leaderboard th:nth-child(2),
-  .leaderboard td:nth-child(2) {
-    white-space: normal;
-  }
+      .leaderboard th:nth-child(2),
+      .leaderboard td:nth-child(2) {
+        white-space: normal;
+      }
 
-  footer {
-    font-size: 0.8em;
-  }
+      footer {
+        font-size: 0.8em;
+      }
 
-  .modal-content {
-    width: 94vw;
-    max-height: 85vh;
-    padding: 12px 10px 14px;
-  }
+      .modal-content {
+        width: 94vw;
+        max-height: 85vh;
+        padding: 12px 10px 14px;
+      }
 
-  .modal-title {
-    font-size: 1.1em;
-  }
+      .modal-title {
+        font-size: 1.1em;
+      }
 
-  .summary-line {
-    font-size: 0.85em;
-  }
+      .summary-line {
+        font-size: 0.85em;
+      }
 
-  .detail-table th,
-  .detail-table td {
-    font-size: 0.8em;
-    padding: 4px 5px;
-  }
-}
+      .detail-table th,
+      .detail-table td {
+        font-size: 0.8em;
+        padding: 4px 5px;
+      }
+    }
 
   </style>
 </head>
@@ -551,6 +551,7 @@
     correctMap    = {};
 
     try {
+      // Hämta spelare + quizfrågor parallellt
       const [playersRes, quizRes] = await Promise.all([
         fetch(API_URL),
         fetch(QUIZ_API)
@@ -571,6 +572,7 @@
       if (!players)  throw new Error("Inga spelare hittades");
       if (!quizRows) throw new Error("Inga quizfrågor hittades");
 
+      // Map: fråga -> rad + korrekt bokstav
       quizRows.forEach(row => {
         if (!row) return;
         const id = row.id;
@@ -596,6 +598,7 @@
       players.forEach(p => {
         let photos = 0;
 
+        // Bilder (gallery) – endast för statistik, inte poäng
         if (p.gallery) {
           try {
             const parsed = JSON.parse(p.gallery);
@@ -616,12 +619,14 @@
         let   challengeApproved = Array.isArray(pdata.challengeApproved) ? pdata.challengeApproved : [];
         const challengeEvidence = Array.isArray(pdata.challengeEvidence) ? pdata.challengeEvidence : [];
 
+        // Gissa Orten
         const guessLoc   = pdata.guessLocation || {};
         const locResults = Array.isArray(guessLoc.results) ? guessLoc.results : [];
         const locAnswers = Array.isArray(guessLoc.answers) ? guessLoc.answers : [];
         const locationCorrect = locResults.filter(Boolean).length;
         const locationTotal   = LOCATION_COUNT;
 
+        // se till att approved-arrayen har rätt längd
         const maxChallengesBase = Math.max(
           challengeBoard.length,
           challengeMarked.length,
@@ -634,6 +639,7 @@
         }
         pdata.challengeApproved = challengeApproved;
 
+        // Quiz: answered / correct
         let quizAnswered = 0;
         let quizCorrect  = 0;
         let quizTotal    = quizOrder.length;
@@ -647,6 +653,7 @@
           if (correct && given === correct) quizCorrect++;
         });
 
+        // Utmaningar
         const challengesTotal   = maxChallengesBase;
         const challengesApprovedCount = challengeApproved.filter(Boolean).length;
 
@@ -655,11 +662,13 @@
         totalLocationsCorrect += locationCorrect;
         totalChallengesDone   += challengesApprovedCount;
 
+        // Poäng (bilder ger inga poäng)
         const totalPoints =
           quizCorrect * 5 +
           locationCorrect * 3 +
           challengesApprovedCount * 4;
 
+        // Status-pill för quiz
         let quizPillClass = "pill-none";
         let quizPillText  = "Inte startat";
         if (quizAnswered >= quizTotal && quizTotal > 0) {
@@ -670,6 +679,7 @@
           quizPillText  = "Pågår";
         }
 
+        // Status-pill för utmaningar
         let challPillClass = "pill-none";
         let challPillText  = "Inte godkänd ännu";
         if (challengesApprovedCount >= challengesTotal && challengesTotal > 0) {
@@ -712,15 +722,18 @@
         });
       });
 
+      // Sortera efter totalpoäng
       results.sort((a, b) => b.totalPoints - a.totalPoints);
       playerDetails = results;
 
+      // Stats
       document.getElementById("totalPlayers").textContent    = "👥 Spelare: " + players.length;
       document.getElementById("totalPhotos").textContent     = "📸 Bilder: " + totalPhotos;
       document.getElementById("totalQuiz").textContent       = "❓ Rätt på quiz: " + totalQuizCorrect;
       document.getElementById("totalLocations").textContent  = "🌍 Rätt platser: " + totalLocationsCorrect;
       document.getElementById("totalChallenges").textContent = "🧩 Godkända utmaningar: " + totalChallengesDone;
 
+      // Ledartavla
       tbody.innerHTML = "";
       results.forEach((r, i) => {
         const tr = document.createElement("tr");
@@ -740,6 +753,7 @@
         photosTd.textContent = r.photos;
         tr.appendChild(photosTd);
 
+        // Quiz
         const quizTd = document.createElement("td");
         quizTd.textContent = `${r.quizCorrect} / ${r.quizTotal || "-"}`;
         const qp = document.createElement("span");
@@ -748,10 +762,12 @@
         quizTd.appendChild(qp);
         tr.appendChild(quizTd);
 
+        // Gissa plats
         const locTd = document.createElement("td");
         locTd.textContent = `${r.locationCorrect} / ${r.locationTotal}`;
         tr.appendChild(locTd);
 
+        // Utmaningar
         const challTd = document.createElement("td");
         challTd.textContent = `${r.challengesApprovedCount} / ${r.challengesTotal || "-"}`;
         const cp = document.createElement("span");
@@ -760,6 +776,7 @@
         challTd.appendChild(cp);
         tr.appendChild(challTd);
 
+        // Totalt
         const totalTd = document.createElement("td");
         totalTd.className = "total-cell";
         if (i === 0)      totalTd.classList.add("total-gold");
@@ -773,11 +790,34 @@
 
       loadingEl.style.display = "none";
       tableEl.style.display   = "table";
+
+      // 👇 Sync "points" column in Blad1 with the calculated totalPoints
+      syncPointsToSheet(results);
+
     } catch (err) {
       console.error(err);
       loadingEl.style.display = "none";
       errorEl.textContent = "Kunde inte hämta data: " + err.message;
       errorEl.style.display = "block";
+    }
+  }
+
+  // Uppdatera "points"-kolumnen i Blad1 för alla spelare
+  async function syncPointsToSheet(results) {
+    for (const r of results) {
+      try {
+        await fetch(`${API_URL}/${r.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            blad1: {
+              points: r.totalPoints   // 👈 kolumnen "points" i Blad1
+            }
+          })
+        });
+      } catch (e) {
+        console.error("Kunde inte uppdatera poäng för", r.name, e);
+      }
     }
   }
 
@@ -972,6 +1012,7 @@
     document.getElementById("playerModal").style.display = "none";
   }
 
+  // Toggle domargodkännande av utmaning
   async function toggleChallengeApproval(playerObj, challengeIndex) {
     try {
       if (!isJudge) return; // safety
@@ -994,11 +1035,13 @@
       const approvedCount = approvedArray.filter(Boolean).length;
       p.challengesApprovedCount = approvedCount;
 
+      // räkna om totalpoängen för just denna spelare (utan bilder)
       p.totalPoints =
         p.quizCorrect * 5 +
         p.locationCorrect * 3 +
         approvedCount * 4;
 
+      // PUT till Sheety (data-fältet)
       await fetch(`${API_URL}/${p.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -1009,8 +1052,10 @@
         })
       });
 
+      // Ladda om hela tabellen för att uppdatera ranking & totals (och points-kolumn)
       await loadData();
 
+      // Öppna samma spelare igen efter reload
       const newIndex = playerDetails.findIndex(x => x.id === p.id);
       if (newIndex !== -1) showPlayerDetails(newIndex);
     } catch (err) {
