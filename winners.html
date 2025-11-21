@@ -277,165 +277,162 @@
   <footer>🎉 Grattis till alla deltagare! Tack för att ni firade Ingrid 80! 🎂</footer>
 
   <script>
-  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
 
-  let allRanked = [];
-  let step = 0;
+    let allRanked = [];
+    let step = 0;
 
-  async function loadResults() {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    const sheetKey = Object.keys(data)[0];
-    const players = data[sheetKey] || [];
+    // 📊 Read from the "points" column in Blad1
+    async function loadResults() {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      const sheetKey = Object.keys(data)[0];
+      const players = data[sheetKey] || [];
 
-    const results = players.map(p => {
-      let photos = 0;
-      let pdata = {};
-      try { photos = p.gallery ? JSON.parse(p.gallery).length : 0; } catch {}
-      try { pdata = JSON.parse(p.data || "{}"); } catch {}
+      const results = players
+        .map(p => {
+          const totalPoints = Number(p.points) || 0; // <- read from sheet
+          return {
+            name: p.name || "(okänt namn)",
+            totalPoints
+          };
+        })
+        // optional: keep everyone, even 0 points; remove this filter if you want truly all
+        .filter(p => p.name.trim() !== "");
 
-      // --- Quiz scoring ---
-      const quizAnswers = Array.isArray(pdata.quizAnswers) ? pdata.quizAnswers : [];
-      const quizCorrect = quizAnswers.filter(a => a && a.answer === (pdata.correctMap ? pdata.correctMap[a.questionId] : null)).length;
-
-      // --- Location scoring ---
-      const guessLoc = pdata.guessLocation || {};
-      const locResults = Array.isArray(guessLoc.results) ? guessLoc.results : [];
-      const locationCorrect = locResults.filter(Boolean).length;
-
-      // --- Challenges scoring ---
-      const challengeApproved = Array.isArray(pdata.challengeApproved) ? pdata.challengeApproved : [];
-      const challengesApprovedCount = challengeApproved.filter(Boolean).length;
-
-      // --- Total points ---
-      const totalPoints = quizCorrect * 5 + locationCorrect * 3 + challengesApprovedCount * 4;
-
-      return { name: p.name, totalPoints };
-    });
-
-    results.sort((a,b)=>b.totalPoints - a.totalPoints);
-    return results;
-  }
-
-  function revealTop3() {
-    const top3 = allRanked.slice(0,3);
-    document.querySelector("#bronze .name").textContent = `${top3[2].name} (${top3[2].totalPoints} p)`;
-    document.querySelector("#silver .name").textContent = `${top3[1].name} (${top3[1].totalPoints} p)`;
-    document.querySelector("#gold .name").textContent = `${top3[0].name} (${top3[0].totalPoints} p)`;
-  }
-
-  function showOthers() {
-    const othersDiv = document.getElementById("others");
-    const others = allRanked.slice(3);
-    if (!others.length) return;
-
-    othersDiv.style.display = "block";
-    othersDiv.innerHTML = `
-      <div class="others-title">Övriga deltagare</div>
-      <ul class="others-list">
-        ${others.map((p,i)=> `
-          <li>
-            <span class="others-rank">#${i+4}</span>
-            <span class="others-name">${p.name}</span>
-            <span class="others-points">${p.totalPoints} p</span>
-          </li>
-        `).join("")}
-      </ul>
-    `;
-  }
-
-  function dropConfetti() {
-    for (let i = 0; i < 120; i++) {
-      const confetti = document.createElement("div");
-      confetti.className = "confetti";
-      confetti.style.left = Math.random()*100 + "%";
-      confetti.style.background = ["#FFD700","#C0C0C0","#CD7F32","#6C63FF"][Math.floor(Math.random()*4)];
-      confetti.style.animationDelay = Math.random() * 1 + "s";
-      document.body.appendChild(confetti);
-      setTimeout(()=>confetti.remove(), 3500);
+      results.sort((a, b) => b.totalPoints - a.totalPoints);
+      return results;
     }
-  }
 
-  // 🔹 Fake hacking sequence (10 seconds)
-  function startHackingSequence(onDone) {
-    const overlay = document.getElementById("hackOverlay");
-    const log = document.getElementById("hackLog");
-    const fill = document.getElementById("hackProgressFill");
+    function revealTop3() {
+      const top3 = allRanked.slice(0, 3);
 
-    overlay.style.display = "flex";
-    log.innerHTML = "";
-    fill.style.width = "0%";
+      // Safety: if fewer than 3 players
+      if (top3.length < 3) return;
 
-    const messages = [
-      "Accessing data...",
-      "Hacking Viking Line database...",
-      "Decrypting secret cabin lists...",
-      "Adding cheating points...",
-      "Recalculating leaderboards...",
-      "Almost done...",
-      "Done! Showing final winner..."
-    ];
+      document.querySelector("#bronze .name").textContent =
+        `${top3[2].name} (${top3[2].totalPoints} p)`;
+      document.querySelector("#silver .name").textContent =
+        `${top3[1].name} (${top3[1].totalPoints} p)`;
+      document.querySelector("#gold .name").textContent =
+        `${top3[0].name} (${top3[0].totalPoints} p)`;
+    }
 
-    const totalDuration = 10000; // 10 seconds
-    const tick = 200;            // progress update every 0.2s
-    let elapsed = 0;
+    function showOthers() {
+      const othersDiv = document.getElementById("others");
+      const others = allRanked.slice(3);
+      if (!others.length) return;
 
-    // Show messages at evenly spaced intervals
-    messages.forEach((msg, i) => {
-      const t = (totalDuration / (messages.length)) * i;
-      setTimeout(() => {
-        const line = document.createElement("div");
-        line.className = "hack-log-line";
-        line.textContent = msg;
-        log.appendChild(line);
-        log.scrollTop = log.scrollHeight;
-      }, t);
-    });
+      othersDiv.style.display = "block";
+      othersDiv.innerHTML = `
+        <div class="others-title">Övriga deltagare</div>
+        <ul class="others-list">
+          ${others.map((p,i)=> `
+            <li>
+              <span class="others-rank">#${i+4}</span>
+              <span class="others-name">${p.name}</span>
+              <span class="others-points">${p.totalPoints} p</span>
+            </li>
+          `).join("")}
+        </ul>
+      `;
+    }
 
-    const progressTimer = setInterval(() => {
-      elapsed += tick;
-      let progress = Math.min(100, (elapsed / totalDuration) * 100);
-      fill.style.width = progress + "%";
-      if (elapsed >= totalDuration) {
-        clearInterval(progressTimer);
-        setTimeout(() => {
-          overlay.style.display = "none";
-          if (typeof onDone === "function") onDone();
-        }, 400); // tiny pause after 100%
+    function dropConfetti() {
+      for (let i = 0; i < 120; i++) {
+        const confetti = document.createElement("div");
+        confetti.className = "confetti";
+        confetti.style.left = Math.random()*100 + "%";
+        confetti.style.background = ["#FFD700","#C0C0C0","#CD7F32","#6C63FF"][Math.floor(Math.random()*4)];
+        confetti.style.animationDelay = Math.random() * 1 + "s";
+        document.body.appendChild(confetti);
+        setTimeout(()=>confetti.remove(), 3500);
       }
-    }, tick);
-  }
-
-  document.getElementById("revealBtn").addEventListener("click", async () => {
-    const btn = document.getElementById("revealBtn");
-
-    if (step === 0) {
-      allRanked = await loadResults();
-      if (allRanked.length < 3) return;
-
-      revealTop3();
-      document.getElementById("winnersBox").style.display = "block";
-      document.getElementById("bronze").classList.add("visible");
-      btn.textContent = "Visa 2:a plats";
-      step = 1;
-
-    } else if (step === 1) {
-      document.getElementById("silver").classList.add("visible");
-      btn.textContent = "Visa vinnaren!";
-      step = 2;
-
-    } else if (step === 2) {
-      // 🔹 Start hacking joke instead of showing winner immediately
-      btn.disabled = true;
-      startHackingSequence(() => {
-        document.getElementById("gold").classList.add("visible");
-        dropConfetti();
-        btn.style.display = "none";
-        step = 3;
-        setTimeout(showOthers, 3000);
-      });
     }
-  });
+
+    // 🔹 Fake hacking sequence (10 seconds)
+    function startHackingSequence(onDone) {
+      const overlay = document.getElementById("hackOverlay");
+      const log = document.getElementById("hackLog");
+      const fill = document.getElementById("hackProgressFill");
+
+      overlay.style.display = "flex";
+      log.innerHTML = "";
+      fill.style.width = "0%";
+
+      const messages = [
+        "Accessing data...",
+        "Hacking Viking Line database...",
+        "Decrypting secret cabin lists...",
+        "Adding cheating points...",
+        "Recalculating leaderboards...",
+        "Almost done...",
+        "Done! Showing final winner..."
+      ];
+
+      const totalDuration = 10000; // 10 seconds
+      const tick = 200;            // progress update every 0.2s
+      let elapsed = 0;
+
+      // Show messages at evenly spaced intervals
+      messages.forEach((msg, i) => {
+        const t = (totalDuration / (messages.length)) * i;
+        setTimeout(() => {
+          const line = document.createElement("div");
+          line.className = "hack-log-line";
+          line.textContent = msg;
+          log.appendChild(line);
+          log.scrollTop = log.scrollHeight;
+        }, t);
+      });
+
+      const progressTimer = setInterval(() => {
+        elapsed += tick;
+        let progress = Math.min(100, (elapsed / totalDuration) * 100);
+        fill.style.width = progress + "%";
+        if (elapsed >= totalDuration) {
+          clearInterval(progressTimer);
+          setTimeout(() => {
+            overlay.style.display = "none";
+            if (typeof onDone === "function") onDone();
+          }, 400); // tiny pause after 100%
+        }
+      }, tick);
+    }
+
+    document.getElementById("revealBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("revealBtn");
+
+      if (step === 0) {
+        allRanked = await loadResults();
+        if (allRanked.length < 3) {
+          alert("Det finns inte minst tre spelare med poäng ännu.");
+          return;
+        }
+
+        revealTop3();
+        document.getElementById("winnersBox").style.display = "block";
+        document.getElementById("bronze").classList.add("visible");
+        btn.textContent = "Visa 2:a plats";
+        step = 1;
+
+      } else if (step === 1) {
+        document.getElementById("silver").classList.add("visible");
+        btn.textContent = "Visa vinnaren!";
+        step = 2;
+
+      } else if (step === 2) {
+        // 🔹 Start hacking joke instead of showing winner immediately
+        btn.disabled = true;
+        startHackingSequence(() => {
+          document.getElementById("gold").classList.add("visible");
+          dropConfetti();
+          btn.style.display = "none";
+          step = 3;
+          setTimeout(showOthers, 3000);
+        });
+      }
+    });
   </script>
 </body>
 </html>
