@@ -282,20 +282,20 @@
       loadGallery();
     }
 
-function goBack() {
-  if (playerId) {
-    window.location.href = "play.html?id=" + encodeURIComponent(playerId);
-  } else if (window.history.length > 1) {
-    // fallback: use browser history if available
-    window.history.back();
-  } else {
-    // last resort: go to login
-    window.location.href = "index.html";
-  }
-}
+    function goBack() {
+      // Prefer going back to the player's page using the id from the URL
+      if (playerId) {
+        window.location.href = "play.html?id=" + encodeURIComponent(playerId);
+      } else if (window.history.length > 1) {
+        // Fallback: go back in history if possible
+        window.history.back();
+      } else {
+        // Last resort: go to login
+        window.location.href = "index.html";
+      }
+    }
 
     loadGallery();
   </script>
 </body>
 </html>
-
