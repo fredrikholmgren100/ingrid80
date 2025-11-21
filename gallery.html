@@ -201,35 +201,8 @@
 
   <script>
     const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
-
-    // Try to get playerId from URL, sessionStorage, or referrer
-    const urlParams = new URLSearchParams(window.location.search);
-    let playerId = urlParams.get("id");
-
-    if (!playerId) {
-      const storedId = sessionStorage.getItem("playerId");
-      if (storedId) {
-        playerId = storedId;
-      }
-    }
-
-    if (!playerId && document.referrer) {
-      try {
-        const refUrl = new URL(document.referrer);
-        const refId = refUrl.searchParams.get("id");
-        if (refId) {
-          playerId = refId;
-        }
-      } catch (e) {
-        console.warn("Kunde inte läsa id från referrer:", e);
-      }
-    }
-
-    // Persist the best-known playerId
-    if (playerId) {
-      sessionStorage.setItem("playerId", playerId);
-    }
-
+    const params = new URLSearchParams(window.location.search);
+    const playerId = params.get("id");   // used for delete + fallback back-link
     let currentImageUrl = "";
 
     async function loadGallery() {
@@ -245,7 +218,9 @@
         if (player.gallery) {
           try {
             let arr = JSON.parse(player.gallery);
-            arr.forEach((url, index) => addImage(url, player.name, player.id, index, arr));
+            arr.forEach((url, index) =>
+              addImage(url, player.name, player.id, index, arr)
+            );
           } catch (e) {
             addImage(player.gallery, player.name, player.id, 0, [player.gallery]);
           }
@@ -263,9 +238,8 @@
       img.onclick = () => openLightbox(url);
       item.appendChild(img);
 
-      // Only the owner can see the delete button
-      const numericPlayerId = playerId ? parseInt(playerId, 10) : null;
-      if (numericPlayerId && numericPlayerId === ownerId) {
+      // ägare får ta bort bilden
+      if (playerId && parseInt(playerId, 10) === ownerId) {
         let delBtn = document.createElement("button");
         delBtn.textContent = "🗑";
         delBtn.className = "delete-btn";
@@ -312,14 +286,16 @@
     }
 
     function goBack() {
-      const id = sessionStorage.getItem("playerId") || playerId;
-
-      if (id) {
-        // Always go back to the player's page
-        window.location.href = "play.html?id=" + encodeURIComponent(id);
+      // Same logic as your working Poängsystem page,
+      // but with smarter fallback if we *do* have an id.
+      if (history.length > 1) {
+        history.back();
       } else {
-        // If we somehow have no id at all, go to login
-        window.location.href = "index.html";
+        if (playerId) {
+          window.location.href = "play.html?id=" + encodeURIComponent(playerId);
+        } else {
+          window.location.href = "play.html";
+        }
       }
     }
 
