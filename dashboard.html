@@ -318,6 +318,31 @@
       cursor: pointer;
     }
 
+    /* --- Photo grid in modal (for Dev) --- */
+    #modalPhotosSection {
+      margin-top: 10px;
+      margin-bottom: 6px;
+    }
+
+    .photo-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .photo-grid a {
+      display: block;
+    }
+
+    .photo-grid img {
+      width: 70px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+
     /* ---------- Mobile tweaks ---------- */
     @media (max-width: 768px) {
 
@@ -384,6 +409,11 @@
         font-size: 0.8em;
         padding: 4px 5px;
       }
+
+      .photo-grid img {
+        width: 60px;
+        height: 60px;
+      }
     }
 
   </style>
@@ -429,6 +459,7 @@
 
   <footer>
     Tack för att du firade Ingrid! 🎉  
+    <br>Eventet avslutades kl. 23:59 den 10 oktober.
   </footer>
 
   <!-- Modal with deep dive -->
@@ -469,6 +500,12 @@
           </thead>
           <tbody></tbody>
         </table>
+
+        <!-- 📸 Bilder – only visible for Dev -->
+        <div id="modalPhotosSection">
+          <div class="modal-section-title">📸 Bilder</div>
+          <div id="modalPhotos"></div>
+        </div>
 
         <div class="modal-section-title" id="modalChallengeTitle">🧩 Utmaningar</div>
         <table class="detail-table" id="modalChallengeTable">
@@ -603,14 +640,22 @@
 
       players.forEach(p => {
         let photos = 0;
+        let photoUrls = [];
 
         // Bilder (gallery) – endast för statistik, inte poäng
         if (p.gallery) {
           try {
             const parsed = JSON.parse(p.gallery);
-            photos = Array.isArray(parsed) ? parsed.length : 1;
+            if (Array.isArray(parsed)) {
+              photos = parsed.length;
+              photoUrls = parsed;
+            } else {
+              photos = 1;
+              photoUrls = [parsed];
+            }
           } catch {
             photos = 1;
+            photoUrls = [p.gallery];
           }
         }
 
@@ -632,7 +677,7 @@
         const locationCorrect = locResults.filter(Boolean).length;
         const locationTotal   = LOCATION_COUNT;
 
-        // Se till att approved-arrayen har rätt längd
+        // se till att approved-arrayen har rätt längd
         const maxChallengesBase = Math.max(
           challengeBoard.length,
           challengeMarked.length,
@@ -699,6 +744,7 @@
           id: p.id,
           name: p.name || "(okänt namn)",
           photos,
+          photoUrls,
 
           quizAnswered,
           quizCorrect,
@@ -734,7 +780,7 @@
       playerDetails = results;
 
       // Stats (utan Dev)
-      document.getElementById("totalPlayers").textContent    = "👥 Spelare: " + players.length;
+      document.getElementById("totalPlayers").textContent    = "👥 Spelare: " + results.length;
       document.getElementById("totalPhotos").textContent     = "📸 Bilder: " + totalPhotos;
       document.getElementById("totalQuiz").textContent       = "❓ Rätt på quiz: " + totalQuizCorrect;
       document.getElementById("totalLocations").textContent  = "🌍 Rätt platser: " + totalLocationsCorrect;
@@ -798,7 +844,7 @@
       loadingEl.style.display = "none";
       tableEl.style.display   = "table";
 
-      // 👇 Sync "points" column in Blad1 with the calculated totalPoints (for non-Dev players)
+      // 👇 Sync "points" column in Blad1 with the calculated totalPoints
       syncPointsToSheet(results);
 
     } catch (err) {
@@ -836,6 +882,8 @@
     const nameEl         = document.getElementById("modalPlayerName");
     const summaryEl      = document.getElementById("modalSummary");
     const mpContainer    = document.getElementById("manualPointsContainer");
+    const photosSection  = document.getElementById("modalPhotosSection");
+    const photosDiv      = document.getElementById("modalPhotos");
     const quizTbody      = document.querySelector("#modalQuizTable tbody");
     const challTbody     = document.querySelector("#modalChallengeTable tbody");
     const locationTbody  = document.querySelector("#modalLocationTable tbody");
@@ -892,6 +940,36 @@
         mpContainer.textContent = `Manuella poäng: ${currentManual}`;
       } else {
         mpContainer.textContent = "";
+      }
+    }
+
+    // --- Photos section (only Dev sees thumbnails) ---
+    if (!isJudge) {
+      photosSection.style.display = "none";
+    } else {
+      photosSection.style.display = "block";
+      photosDiv.innerHTML = "";
+
+      if (p.photoUrls && p.photoUrls.length) {
+        const grid = document.createElement("div");
+        grid.className = "photo-grid";
+
+        p.photoUrls.forEach(url => {
+          const a = document.createElement("a");
+          a.href = url;
+          a.target = "_blank";
+
+          const img = document.createElement("img");
+          img.src = url;
+          img.alt = "Spelarbild";
+
+          a.appendChild(img);
+          grid.appendChild(a);
+        });
+
+        photosDiv.appendChild(grid);
+      } else {
+        photosDiv.textContent = "Inga bilder uppladdade.";
       }
     }
 
@@ -1176,4 +1254,3 @@
 
 </body>
 </html>
-
