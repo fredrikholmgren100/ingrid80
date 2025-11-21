@@ -283,6 +283,7 @@
     let step = 0;
 
     // 📊 Read from the "points" column in Blad1
+    //    and exclude the Dev account
     async function loadResults() {
       const res = await fetch(API_URL);
       const data = await res.json();
@@ -290,15 +291,18 @@
       const players = data[sheetKey] || [];
 
       const results = players
+        // filter out Dev by name, case-insensitive
+        .filter(p => {
+          const n = (p.name || "").trim().toLowerCase();
+          return n !== "" && n !== "dev";
+        })
         .map(p => {
           const totalPoints = Number(p.points) || 0; // <- read from sheet
           return {
             name: p.name || "(okänt namn)",
             totalPoints
           };
-        })
-        // optional: keep everyone, even 0 points; remove this filter if you want truly all
-        .filter(p => p.name.trim() !== "");
+        });
 
       results.sort((a, b) => b.totalPoints - a.totalPoints);
       return results;
@@ -307,7 +311,6 @@
     function revealTop3() {
       const top3 = allRanked.slice(0, 3);
 
-      // Safety: if fewer than 3 players
       if (top3.length < 3) return;
 
       document.querySelector("#bronze .name").textContent =
@@ -395,7 +398,7 @@
           setTimeout(() => {
             overlay.style.display = "none";
             if (typeof onDone === "function") onDone();
-          }, 400); // tiny pause after 100%
+          }, 400);
         }
       }, tick);
     }
@@ -406,7 +409,7 @@
       if (step === 0) {
         allRanked = await loadResults();
         if (allRanked.length < 3) {
-          alert("Det finns inte minst tre spelare med poäng ännu.");
+          alert("Det finns inte minst tre spelare med poäng ännu (exkl. Dev).");
           return;
         }
 
@@ -422,7 +425,6 @@
         step = 2;
 
       } else if (step === 2) {
-        // 🔹 Start hacking joke instead of showing winner immediately
         btn.disabled = true;
         startHackingSequence(() => {
           document.getElementById("gold").classList.add("visible");
