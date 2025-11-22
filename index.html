@@ -143,63 +143,91 @@
     <p class="quote">Fun fact, the man on the image comes from "this-person-dose-not-exist.com"</p>
   </div>
 
-
   <script>
-  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+    const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
 
-  const pinBoxes = document.querySelectorAll(".pin-box");
-  pinBoxes.forEach((box, idx) => {
-    box.addEventListener("input", () => {
-      if (box.value && idx < pinBoxes.length - 1) pinBoxes[idx + 1].focus();
-      if (idx === pinBoxes.length - 1 && box.value) checkLogin();
+    const pinBoxes = document.querySelectorAll(".pin-box");
+
+    // Auto-hop between PIN fields
+    pinBoxes.forEach((box, idx) => {
+      box.addEventListener("input", () => {
+        if (box.value && idx < pinBoxes.length - 1) {
+          pinBoxes[idx + 1].focus();
+        }
+        if (idx === pinBoxes.length - 1 && box.value) {
+          checkLogin();
+        }
+      });
     });
-  });
 
-  async function checkLogin() {
-    const name = document.getElementById("name").value.trim();
-    const pin = Array.from(pinBoxes).map(b => b.value).join("");
-    if (!name || pin.length < 4) return;
+    async function checkLogin() {
+      const name = document.getElementById("name").value.trim();
+      const pin = Array.from(pinBoxes).map(b => b.value).join("");
 
-    let res = await fetch(API_URL);
-    let data = await res.json();
-    let sheetKey = Object.keys(data)[0];
-    let players = data[sheetKey];
-    let player = players.find(p => p.name.toLowerCase() === name.toLowerCase());
+      if (!name || pin.length < 4) return;
 
-    if (player) {
-      if (player.pin === pin) {
-        sessionStorage.setItem("loggedIn", "true");
-        window.location.href = "play.html?id=" + player.id;
+      // Hämta alla spelare
+      let res = await fetch(API_URL);
+      let data = await res.json();
+      const sheetKey = Object.keys(data)[0];   // t.ex. "blad1"
+      const players  = data[sheetKey];
+
+      // Kolla om användare finns
+      const player = players.find(
+        p => (p.name || "").toLowerCase() === name.toLowerCase()
+      );
+
+      if (player) {
+        // 🔐 Inloggning
+        if (String(player.pin || "") === pin) {
+          sessionStorage.setItem("loggedIn", "true");
+          window.location.href = "play.html?id=" + player.id;
+        } else {
+          alert("Fel pinkod. Försök igen.");
+          pinBoxes.forEach(b => b.value = "");
+          pinBoxes[0].focus();
+        }
       } else {
-        alert("Fel pinkod. Försök igen.");
-        pinBoxes.forEach(b => b.value = "");
-        pinBoxes[0].focus();
-      }
-    } else {
-      if (confirm("Användaren finns inte. Vill du skapa ett nytt konto?")) {
-        const newPlayer = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            blad1: { name, pin, data: "{}", gallery: "" }
-          })
-        });
-        const newData = await newPlayer.json();
-        sessionStorage.setItem("loggedIn", "true");
-        window.location.href = "play.html?id=" + newData.blad1.id;
-      } else {
-        pinBoxes.forEach(b => b.value = "");
-        pinBoxes[0].focus();
+        // 👤 Skapa nytt konto
+        if (confirm("Användaren finns inte. Vill du skapa ett nytt konto?")) {
+          try {
+            const payload = {
+              name: name,
+              pin: pin,
+              data: JSON.stringify({}), // tomt data-objekt
+              gallery: "",
+              points: 0                 // ny spelare börjar på 0 poäng
+            };
+
+            const newPlayerRes = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ blad1: payload })
+              // OBS: "blad1" här måste matcha det Sheety visar som resource-namn
+            });
+
+            const newData = await newPlayerRes.json();
+            const rootKey = Object.keys(newData)[0]; // t.ex. "blad1"
+            const created = newData[rootKey];
+
+            if (!created || !created.id) {
+              console.error("Okänt svar från Sheety:", newData);
+              alert("Kontot verkar inte ha skapats korrekt. Kolla Sheety-inställningarna.");
+              return;
+            }
+
+            sessionStorage.setItem("loggedIn", "true");
+            window.location.href = "play.html?id=" + created.id;
+          } catch (err) {
+            console.error("Fel vid skapande av konto:", err);
+            alert("Kunde inte skapa konto. Kontrollera Sheety-inställningarna.");
+          }
+        } else {
+          pinBoxes.forEach(b => b.value = "");
+          pinBoxes[0].focus();
+        }
       }
     }
-  }
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
