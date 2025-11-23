@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kvitto – Ingrid 80</title>
+  <style>
+        body{
+          margin:0;
+          min-height:100vh;
+          background:#111827;
+          display:flex;
+          justify-content:center;
+          align-items:center;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .wrapper{
+          padding:16px;
+        }
+        .receipt{
+          width:260px;
+          background:#f9fafb;
+          color:#111827;
+          font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+          font-size:12px;
+          line-height:1.4;
+          border-radius:6px;
+          padding:12px 12px 14px;
+          box-shadow:0 12px 25px rgba(15,23,42,0.75);
+          position:relative;
+          overflow:hidden;
+        }
+        .receipt::before{
+          content:"";
+          position:absolute;
+          inset:0;
+          background-image: radial-gradient(circle at top,#e5e7eb 0, transparent 60%);
+          opacity:0.6;
+          pointer-events:none;
+        }
+        .receipt-header,
+        .receipt-footer{
+          text-align:center;
+          margin-bottom:8px;
+          position:relative;
+          z-index:1;
+        }
+        .receipt-header .title{
+          font-weight:700;
+          letter-spacing:0.05em;
+          text-transform:uppercase;
+        }
+        .receipt-header .subtitle{
+          font-size:11px;
+          margin-top:2px;
+        }
+        .receipt-meta{
+          font-size:11px;
+          display:flex;
+          justify-content:space-between;
+          margin:6px 0 8px;
+          position:relative;
+          z-index:1;
+        }
+        .receipt hr{
+          border:none;
+          border-top:1px dashed #9ca3af;
+          margin:6px 0;
+          position:relative;
+          z-index:1;
+        }
+        .receipt-table{
+          width:100%;
+          border-collapse:collapse;
+          position:relative;
+          z-index:1;
+        }
+        .receipt-table th,
+        .receipt-table td{
+          padding:2px 0;
+        }
+        .col-desc{
+          text-align:left;
+          width:55%;
+        }
+        .col-qty,
+        .col-price,
+        .col-sum{
+          text-align:right;
+          width:15%;
+        }
+        .receipt-total{
+          margin-top:5px;
+          text-align:right;
+          font-weight:700;
+          position:relative;
+          z-index:1;
+        }
+        .receipt-footer{
+          margin-top:10px;
+          font-size:11px;
+        }
+        .muted{
+          opacity:0.8;
+        }
+      </style>
+</head>
+<body>
+  <div class="wrapper">
+    
+        <div class="receipt">
+          <div class="receipt-header">
+            <div class="title">Kvitto – Ingrid 80</div>
+            
+          </div>
+          <div class="receipt-meta">
+            <span>Kvitto-ID: #9091</span>
+            <span>2025-11-23</span>
+          </div>
+          <hr>
+          <table class="receipt-table">
+            <thead>
+              <tr>
+                <th class="col-desc">Artikel</th>
+                <th class="col-qty">Ant</th>
+                <th class="col-price">à pris</th>
+                <th class="col-sum">Summa</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+        <tr>
+          <td class="col-desc">BARN Köttbullar</td>
+          <td class="col-qty">3</td>
+          <td class="col-price">82,00 kr</td>
+          <td class="col-sum">246,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Pelles fiskfavorit 6</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">90,00 kr</td>
+          <td class="col-sum">90,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">R Ratti Langhe Nebbi 16cl</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">99,00 kr</td>
+          <td class="col-sum">99,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">R Ratti Langhe Nebbi 24cl</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">148,00 kr</td>
+          <td class="col-sum">148,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Louis Latour Rully 24cl</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">199,00 kr</td>
+          <td class="col-sum">199,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">DEVIN Vigneron Pinot 24cl</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">116,00 kr</td>
+          <td class="col-sum">116,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Dom Perignon 2015</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">2650,00 kr</td>
+          <td class="col-sum">2650,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Barn Glass</td>
+          <td class="col-qty">2</td>
+          <td class="col-price">60,00 kr</td>
+          <td class="col-sum">120,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Mezzacorona Teroldeg 24cl</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">97,00 kr</td>
+          <td class="col-sum">97,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Ruggeri Prosecco 12cl</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">75,00 kr</td>
+          <td class="col-sum">75,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Somersby Päroncider</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">90,00 kr</td>
+          <td class="col-sum">90,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Wisby Kloster</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">69,00 kr</td>
+          <td class="col-sum">69,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">G.Lorzen Pinot Noir 24cl</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">125,00 kr</td>
+          <td class="col-sum">125,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Mariestad</td>
+          <td class="col-qty">10</td>
+          <td class="col-price">50,40 kr</td>
+          <td class="col-sum">504,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Läsk</td>
+          <td class="col-qty">10</td>
+          <td class="col-price">39,00 kr</td>
+          <td class="col-sum">390,00 kr</td>
+        </tr>
+      
+        <tr>
+          <td class="col-desc">Kopparbergs Päroncider</td>
+          <td class="col-qty">1</td>
+          <td class="col-price">140,00 kr</td>
+          <td class="col-sum">140,00 kr</td>
+        </tr>
+      
+            </tbody>
+          </table>
+          <hr>
+          <div class="receipt-total">
+            Totalt: 5158,00 kr
+          </div>
+          <div class="receipt-footer">
+            <div class="muted">Swisha till Jimmy på 076-567 48 45</div>
+          </div>
+        </div>
+      
+  </div>
+</body>
+</html>
