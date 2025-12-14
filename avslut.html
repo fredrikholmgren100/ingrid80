@@ -453,7 +453,7 @@ async function fetchCloudinaryTagList() {
 
     $("countChip").textContent = `${items.length} bilder`;
     $("subText").textContent = items.length
-      ? `Visar alla Cloudinary-bilder med tagg: ${EVENT_TAG}`
+      ? `Visar alla bilder från eventet. `
       : `Inga bilder hittades ännu.`;
 
     $("empty").style.display = items.length ? "none" : "block";
@@ -749,3 +749,4 @@ $("saveBtn").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
