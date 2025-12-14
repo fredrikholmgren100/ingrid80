@@ -41,16 +41,17 @@
       flex-wrap:wrap;
     }
     h1{ margin:0; font-size:20px; letter-spacing:.2px; }
-    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; font-weight:600; }
+    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; font-weight:700; }
     .chip{
       font-size:12px;
       color:var(--muted);
-      font-weight:800;
+      font-weight:900;
       border:1px solid var(--border);
       background:rgba(255,255,255,.7);
       padding:6px 10px;
       border-radius:999px;
     }
+
     .wrap{ max-width:1100px; margin:0 auto; padding:8px 6px 22px; }
 
     .toolbar{
@@ -93,6 +94,11 @@
       color:white;
       background:linear-gradient(135deg,var(--accent),var(--accent2));
       box-shadow: 0 12px 22px rgba(91,92,226,.22);
+    }
+    .btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      box-shadow:none;
     }
     .btn:active{transform:translateY(1px)}
     .spacer{flex:1}
@@ -140,6 +146,7 @@
       display:flex;
       align-items:center;
       justify-content:flex-start;
+      pointer-events:none;
     }
     .nameTag{
       max-width:100%;
@@ -163,7 +170,7 @@
       border-radius:var(--radius);
       background:rgba(255,255,255,.55);
       color:var(--muted);
-      font-weight:800;
+      font-weight:900;
       text-align:center;
     }
 
@@ -230,7 +237,7 @@
       padding:12px;
       border-top:1px solid rgba(15,23,42,.10);
     }
-    a.btnLink{
+    a.btnLink, button.btnLink{
       text-decoration:none;
       display:inline-flex;
       align-items:center;
@@ -251,7 +258,7 @@
       display:none;
       z-index:60;
       box-shadow: 0 12px 30px rgba(15,23,42,.16);
-      font-weight:800;
+      font-weight:900;
     }
     .toast.show{display:block}
   </style>
@@ -271,10 +278,11 @@
       <div class="row">
         <button class="btn primary" id="refreshBtn">🔁 Uppdatera</button>
 
-        <label class="btn" for="fileInput" title="Ladda upp fler bilder till ditt galleri">
-          📷 Ladda upp
+        <!-- ✅ Opens phone gallery/picker (NOT camera) + allows multiple -->
+        <label class="btn" for="fileInput" id="uploadLabel" title="Välj flera bilder från din telefon">
+          🖼️ Välj bilder
         </label>
-        <input id="fileInput" type="file" accept="image/*" multiple capture="environment" />
+        <input id="fileInput" type="file" accept="image/*" multiple />
 
         <span class="spacer"></span>
 
@@ -296,12 +304,15 @@
         <div class="title" id="modalTitle">Bild</div>
         <button class="iconbtn" id="copyBtn" aria-label="Kopiera länk">⧉</button>
       </div>
+
       <div class="viewer">
         <img id="modalImg" alt="" />
       </div>
+
       <div class="footer">
         <a class="btn btnLink" id="openBtn" target="_blank" rel="noopener">🔎 Öppna</a>
-        <a class="btn btnLink" id="downloadBtn" target="_blank" rel="noopener">⬇️ Ladda ner</a>
+        <!-- ✅ "Save as image" experience via Share Sheet -->
+        <button class="btn btnLink" id="saveBtn" type="button">📲 Spara till Bilder</button>
       </div>
     </div>
   </div>
@@ -328,6 +339,8 @@
     t.classList.add("show");
     setTimeout(()=>t.classList.remove("show"), 1600);
   }
+
+  function setStatus(msg){ $("statusText").textContent = msg || ""; }
 
   function safeJsonParse(str, fallback){
     try { return JSON.parse(str); } catch { return fallback; }
@@ -363,73 +376,76 @@
       : url;
   }
 
-  function downloadUrl(url, filename){
-    if (!isCloudinaryUrl(url)) return url;
-    const safe = (filename || "Ingrid80")
-      .replace(/[^\w\-]+/g,"_")
-      .slice(0,60);
-    return withTransform(url, "fl_attachment:" + encodeURIComponent(safe));
-  }
-
   function cloudinaryVersionAsNumber(url){
     const m = url.match(/\/upload\/v(\d+)\//);
     return m ? Number(m[1]) : 0;
   }
 
-  function uniqByUrl(items){
-    const map = new Map();
-    for (const it of items){
-      if (!it || !it.url) continue;
-      const u = it.url.trim();
-      if (!u) continue;
-
-      if (!map.has(u)){
-        map.set(u, { url:u, names:new Set(), v: cloudinaryVersionAsNumber(u) });
-      }
-      const obj = map.get(u);
-      if (it.name) obj.names.add(it.name);
-      if (it.v) obj.v = Math.max(obj.v, it.v);
-    }
-    return Array.from(map.values()).map(x => ({
-      url: x.url,
-      names: Array.from(x.names),
-      v: x.v
-    }));
-  }
-
   function getMyId(){
     const params = new URLSearchParams(window.location.search);
-    const id = params.get("id");
-    return id ? String(id).trim() : "";
+    const idFromUrl = params.get("id");
+    if (idFromUrl) return String(idFromUrl).trim();
+
+    const stored = sessionStorage.getItem("playerId");
+    return stored ? String(stored).trim() : "";
   }
 
+  function uniqStrings(arr){
+    const s = new Set();
+    const out = [];
+    for (const x of arr){
+      const v = String(x || "").trim();
+      if (!v) continue;
+      if (s.has(v)) continue;
+      s.add(v);
+      out.push(v);
+    }
+    return out;
+  }
+
+  // ===== Extract images from rows (gallery + evidence + deep scan) =====
   function extractImagesFromRow(row){
     const out = [];
     const name = (row?.name || "").trim() || "Okänd";
     const lowerName = name.toLowerCase();
     if (EXCLUDE_NAMES.includes(lowerName)) return out;
 
-    // 1) row.gallery
+    // row.gallery can be JSON array string, single URL, etc.
     if (row && row.gallery){
       const g = row.gallery;
       const parsed = typeof g === "string" ? safeJsonParse(g, null) : g;
 
       if (Array.isArray(parsed)){
         for (const u of parsed){
-          if (isProbablyImageUrl(u)) out.push({ url: u, name, v: cloudinaryVersionAsNumber(u) });
+          if (isProbablyImageUrl(u)) out.push({ url: String(u).trim(), name, v: cloudinaryVersionAsNumber(u) });
         }
       } else if (typeof parsed === "string"){
-        if (isProbablyImageUrl(parsed)) out.push({ url: parsed, name, v: cloudinaryVersionAsNumber(parsed) });
+        if (isProbablyImageUrl(parsed)) out.push({ url: parsed.trim(), name, v: cloudinaryVersionAsNumber(parsed) });
+      } else if (parsed && typeof parsed === "object"){
+        // If someone stored object structure, grab any image-like strings inside
+        const seen = new Set();
+        (function walk(x){
+          if (x == null) return;
+          if (typeof x === "string"){
+            if (isProbablyImageUrl(x) && !seen.has(x)){
+              seen.add(x);
+              out.push({ url: x.trim(), name, v: cloudinaryVersionAsNumber(x) });
+            }
+            return;
+          }
+          if (Array.isArray(x)){ for (const a of x) walk(a); return; }
+          if (typeof x === "object"){ for (const k of Object.keys(x)) walk(x[k]); }
+        })(parsed);
       }
     }
 
-    // 2) row.data JSON => challengeEvidence photos + deep scan for image-like strings
+    // row.data JSON
     let data = {};
     if (row && row.data){
       data = typeof row.data === "string" ? safeJsonParse(row.data, {}) : (row.data || {});
     }
 
-    // challengeEvidence: [{type:"photo", value:"..."}]
+    // challengeEvidence photos: [{type:"photo", value:"..."}]
     if (Array.isArray(data.challengeEvidence)){
       for (const evid of data.challengeEvidence){
         if (evid && typeof evid === "object" && evid.type === "photo" && isProbablyImageUrl(evid.value)){
@@ -439,39 +455,58 @@
       }
     }
 
-    // Deep scan (catches other stored photo URLs)
-    const seen = new Set();
-    function walk(x){
+    // Deep scan in data for any image-like string
+    const seen2 = new Set();
+    (function walk(x){
       if (x == null) return;
       if (typeof x === "string"){
-        if (isProbablyImageUrl(x) && !seen.has(x)){
-          seen.add(x);
-          out.push({ url: x, name, v: cloudinaryVersionAsNumber(x) });
+        if (isProbablyImageUrl(x) && !seen2.has(x)){
+          seen2.add(x);
+          out.push({ url: x.trim(), name, v: cloudinaryVersionAsNumber(x) });
         }
         return;
       }
       if (Array.isArray(x)){ for (const a of x) walk(a); return; }
       if (typeof x === "object"){ for (const k of Object.keys(x)) walk(x[k]); }
-    }
-    walk(data);
+    })(data);
 
     return out;
   }
 
+  // Dedup by URL, keep ONE name (prefer non-"Okänd")
+  function uniqByUrlKeepName(items){
+    const map = new Map();
+    for (const it of items){
+      if (!it?.url) continue;
+      const u = it.url.trim();
+      if (!u) continue;
+
+      if (!map.has(u)){
+        map.set(u, { url:u, name: it.name || "Okänd", v: it.v || cloudinaryVersionAsNumber(u) });
+      } else {
+        const cur = map.get(u);
+        cur.v = Math.max(cur.v || 0, it.v || 0);
+        // prefer a real name over Okänd
+        if ((cur.name || "").toLowerCase() === "okänd" && it.name) cur.name = it.name;
+      }
+    }
+    return Array.from(map.values());
+  }
+
   // ===== State =====
-  let allItems = [];   // [{url, names[], v}]
+  let allItems = [];   // [{url, name, v}]
   let viewItems = [];
   let current = null;
+  let myName = "";
 
-  function setStatus(msg){ $("statusText").textContent = msg || ""; }
-
+  // ===== Render =====
   function render(){
     const grid = $("grid");
     grid.innerHTML = "";
 
     $("countChip").textContent = `${viewItems.length} bilder`;
-    $("subText").textContent = allItems.length
-      ? `Alla uppladdade bilder under eventet (totalt ${allItems.length}).`
+    $("subText").textContent = viewItems.length
+      ? `Alla uppladdade bilder under eventet.`
       : `Inga bilder hittades ännu.`;
 
     $("empty").style.display = viewItems.length ? "none" : "block";
@@ -491,14 +526,9 @@
 
       const nameTag = document.createElement("div");
       nameTag.className = "nameTag";
-      if (it.names?.length){
-        nameTag.textContent = it.names.length === 1 ? it.names[0] : `${it.names[0]} +${it.names.length-1}`;
-      } else {
-        nameTag.textContent = "Okänd";
-      }
+      nameTag.textContent = it.name || "Okänd";
 
       badge.appendChild(nameTag);
-
       tile.appendChild(img);
       tile.appendChild(badge);
       grid.appendChild(tile);
@@ -507,15 +537,10 @@
 
   function openModal(item){
     current = item;
-    const who = item.names?.[0] ? `${item.names[0]} — ` : "";
+    const who = item.name ? `${item.name} — ` : "";
     $("modalTitle").textContent = who + (item.url.split("/").pop() || "Bild");
     $("modalImg").src = item.url;
-
     $("openBtn").href = item.url;
-
-    const filenameBase = (item.names?.[0] || "Ingrid80") + "_Ingrid80";
-    $("downloadBtn").href = downloadUrl(item.url, filenameBase);
-
     $("modal").classList.add("open");
   }
 
@@ -549,23 +574,54 @@
     }
   }
 
+  // ===== Save to phone gallery (best possible in browser) =====
+  async function saveToPhoneGallery(url, filename){
+    // Browsers cannot directly write into Photos/Gallery.
+    // Best UX: Share Sheet with an image File -> user taps "Save Image" / "Add to Photos".
+    try{
+      if (!navigator.share) throw new Error("No Web Share");
+
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) throw new Error("Fetch failed: " + res.status);
+
+      const blob = await res.blob();
+      const type = blob.type || "image/jpeg";
+      const safeName = (filename || "image.jpg").replace(/[^\w.\-]+/g, "_");
+
+      const file = new File([blob], safeName, { type });
+
+      if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+        throw new Error("canShare(files) false");
+      }
+
+      await navigator.share({
+        title: "Spara bild",
+        text: "Välj 'Spara bild' / 'Lägg till i Bilder'",
+        files: [file]
+      });
+      return;
+    } catch (e) {
+      // Fallback: open image normally; user long-press -> Save Image
+      window.open(url, "_blank", "noopener");
+      alert("Tips: Håll fingret på bilden och välj 'Spara bild' / 'Lägg till i Bilder'.");
+    }
+  }
+
   // ===== Sheety helpers =====
+  async function fetchAllRows(){
+    const res = await fetch(API_URL, { cache:"no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    const key = Object.keys(json)[0];
+    return json[key] || [];
+  }
+
   async function getRowById(id){
     const res = await fetch(`${API_URL}/${id}`, { cache:"no-store" });
     if (!res.ok) throw new Error("Kunde inte läsa spelare (HTTP " + res.status + ")");
     const json = await res.json();
     const key = Object.keys(json)[0];
-    return json[key]; // row object
-  }
-
-  async function putRowGallery(id, galleryArray){
-    await fetch(`${API_URL}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({
-        blad1: { gallery: JSON.stringify(galleryArray) }
-      })
-    });
+    return json[key];
   }
 
   function normalizeGalleryToArray(galleryValue){
@@ -579,22 +635,17 @@
       // if it was just a URL string (not JSON)
       return [galleryValue].filter(Boolean);
     }
-
-    if (typeof galleryValue === "string") return [galleryValue].filter(Boolean);
     return [];
   }
 
-  function uniqStrings(arr){
-    const s = new Set();
-    const out = [];
-    for (const x of arr){
-      const v = String(x || "").trim();
-      if (!v) continue;
-      if (s.has(v)) continue;
-      s.add(v);
-      out.push(v);
-    }
-    return out;
+  async function putRowGallery(id, galleryArray){
+    await fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({
+        blad1: { gallery: JSON.stringify(galleryArray) }
+      })
+    });
   }
 
   // ===== Cloudinary upload =====
@@ -614,46 +665,54 @@
   async function appendUploadToMyGallery(url){
     const myId = getMyId();
     if (!myId){
-      // we can’t safely attach to a player without id
       throw new Error("Saknar ?id=... (kan inte spara till ditt konto)");
     }
 
+    // Read latest row -> merge -> write (minimizes overwriting other uploads)
     const row = await getRowById(myId);
     const arr = normalizeGalleryToArray(row.gallery);
     const next = uniqStrings([url, ...arr]);
     await putRowGallery(myId, next);
   }
 
-  // ===== Data load =====
+  // ===== Load gallery =====
   async function loadAllImages(){
     setStatus("Laddar från Sheety…");
     $("empty").style.display = "none";
     $("grid").innerHTML = "";
 
     try{
-      const res = await fetch(API_URL, { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
+      const rows = await fetchAllRows();
 
-      const json = await res.json();
-      const key = Object.keys(json)[0];
-      const rows = json[key] || [];
+      // Optional: find my name (for status)
+      const myId = getMyId();
+      if (myId){
+        const myRow = rows.find(r => String(r.id) === String(myId));
+        myName = (myRow?.name || "").trim();
+        if (myName) sessionStorage.setItem("playerName", myName);
+      } else {
+        myName = sessionStorage.getItem("playerName") || "";
+      }
 
       let extracted = [];
       for (const row of rows){
         extracted = extracted.concat(extractImagesFromRow(row));
       }
 
-      allItems = uniqByUrl(extracted)
+      allItems = uniqByUrlKeepName(extracted)
         .sort((a,b) => (b.v || 0) - (a.v || 0) || a.url.localeCompare(b.url));
 
       viewItems = allItems;
       render();
 
-      const myId = getMyId();
-      if (myId){
-        setStatus(`Klar ✅ Hämtade ${allItems.length} unika bilder. (Din id: ${myId})`);
+      const uploadEnabled = !!getMyId();
+      $("uploadLabel").style.display = "inline-flex";
+      $("fileInput").disabled = !uploadEnabled;
+
+      if (uploadEnabled){
+        setStatus(`Klar ✅ ${allItems.length} bilder. Du är: ${myName || "spelare"} (id: ${getMyId()})`);
       } else {
-        setStatus(`Klar ✅ Hämtade ${allItems.length} unika bilder. (Tips: öppna med ?id=... för att kunna ladda upp till ditt konto)`);
+        setStatus(`Klar ✅ ${allItems.length} bilder. (Tips: öppna via login så får du ?id=... och kan ladda upp)`);
       }
     }catch(err){
       console.error(err);
@@ -663,22 +722,27 @@
     }
   }
 
-  // ===== Upload handler =====
+  // ===== Upload handler (multi) =====
   async function handleUpload(files){
     const list = Array.from(files || []);
     if (!list.length) return;
 
-    setStatus("Laddar upp…");
-    $("fileInput").value = "";
+    const myId = getMyId();
+    if (!myId){
+      alert("Du kan inte ladda upp här utan att vara inloggad.\nÖppna via login så får du ?id=...");
+      return;
+    }
 
+    $("fileInput").value = "";
     let ok = 0;
+
     for (let i = 0; i < list.length; i++){
       const f = list[i];
       try{
         setStatus(`Laddar upp (${i+1}/${list.length})…`);
         const url = await uploadToCloudinary(f);
 
-        setStatus(`Sparar till galleriet (${i+1}/${list.length})…`);
+        setStatus(`Sparar till ditt galleri (${i+1}/${list.length})…`);
         await appendUploadToMyGallery(url);
 
         ok++;
@@ -687,14 +751,14 @@
         alert(
           "Uppladdningen misslyckades:\n\n" +
           (err?.message || err) +
-          "\n\nTips: Se till att sidan öppnas med ?id=... och att Cloudinary preset är UNSIGNED: " + UPLOAD_PRESET
+          "\n\nTips: Cloudinary preset måste vara UNSIGNED och heta exakt: " + UPLOAD_PRESET
         );
         break;
       }
     }
 
     if (ok){
-      toast("Uppladdat!");
+      toast(`Uppladdat! (${ok}/${list.length})`);
       await loadAllImages();
     } else {
       setStatus("");
@@ -713,6 +777,12 @@
   $("copyBtn").addEventListener("click", copyCurrent);
   $("modal").addEventListener("click", (e)=>{ if (e.target === $("modal")) closeModal(); });
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeModal(); });
+
+  $("saveBtn").addEventListener("click", async () => {
+    if (!current?.url) return;
+    const who = current?.name || "Ingrid80";
+    await saveToPhoneGallery(current.url, `${who}_Ingrid80.jpg`);
+  });
 
   // Init
   loadAllImages();
