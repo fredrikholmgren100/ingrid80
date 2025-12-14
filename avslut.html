@@ -51,7 +51,6 @@
       padding:6px 10px;
       border-radius:999px;
     }
-
     .wrap{ max-width:1100px; margin:0 auto; padding:8px 6px 22px; }
 
     .toolbar{
@@ -95,14 +94,9 @@
       background:linear-gradient(135deg,var(--accent),var(--accent2));
       box-shadow: 0 12px 22px rgba(91,92,226,.22);
     }
-    .btn:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-      box-shadow:none;
-    }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; box-shadow:none; }
     .btn:active{transform:translateY(1px)}
     .spacer{flex:1}
-
     .status{
       color:var(--muted);
       font-weight:800;
@@ -111,7 +105,6 @@
       line-height:1.35;
       width:100%;
     }
-
     input[type="file"]{ display:none; }
 
     .grid{
@@ -243,7 +236,6 @@
       align-items:center;
       gap:8px;
     }
-
     .toast{
       position:fixed;
       left:50%;
@@ -278,15 +270,13 @@
       <div class="row">
         <button class="btn primary" id="refreshBtn">🔁 Uppdatera</button>
 
-        <!-- ✅ Opens phone gallery/picker (NOT camera) + allows multiple -->
         <label class="btn" for="fileInput" id="uploadLabel" title="Välj flera bilder från din telefon">
-          🖼️ Välj bilder
+          🖼️ Ladda upp dina bilder
         </label>
+        <!-- Opens phone gallery picker + multi select -->
         <input id="fileInput" type="file" accept="image/*" multiple />
 
         <span class="spacer"></span>
-
-        <button class="btn" id="copyLinksBtn" title="Kopiera alla bildlänkar">📋 Kopiera länkar</button>
       </div>
 
       <div class="status" id="statusText"></div>
@@ -311,7 +301,6 @@
 
       <div class="footer">
         <a class="btn btnLink" id="openBtn" target="_blank" rel="noopener">🔎 Öppna</a>
-        <!-- ✅ "Save as image" experience via Share Sheet -->
         <button class="btn btnLink" id="saveBtn" type="button">📲 Spara till Bilder</button>
       </div>
     </div>
@@ -321,37 +310,38 @@
 
 <script>
   // ===== CONFIG =====
-  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
-
-  // Cloudinary (unsigned upload)
   const CLOUD_NAME = "dtweoqypu";
   const UPLOAD_PRESET = "Ingrid80";
 
-  const EXCLUDE_NAMES = ["dev"]; // hide judge account
+  // Option B: list by tag
+  const EVENT_TAG = "ingrid80";     // <-- set this tag
+  const EVENT_FOLDER = "Ingrid80";  // <-- optional; "" = root
 
-  // ===== DOM =====
+  // Sheety (to map URLs -> player name, and to store per-player gallery)
+  const SHEETY_API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+
+  const AUTO_REFRESH_MS = 20000;
+
   const $ = (id) => document.getElementById(id);
 
-  // ===== Helpers =====
+  let allItems = [];          // [{ url, name }]
+  let current = null;
+  let isUploading = false;
+
   function toast(msg){
     const t = $("toast");
     t.textContent = msg;
     t.classList.add("show");
     setTimeout(()=>t.classList.remove("show"), 1600);
   }
-
   function setStatus(msg){ $("statusText").textContent = msg || ""; }
 
   function safeJsonParse(str, fallback){
     try { return JSON.parse(str); } catch { return fallback; }
   }
 
-  function isProbablyImageUrl(s){
-    if (typeof s !== "string") return false;
-    const url = s.trim();
-    if (!/^https?:\/\//i.test(url)) return false;
-    if (url.includes("res.cloudinary.com/")) return true;
-    return /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(url);
+  function normalizeUrl(u){
+    return String(u || "").trim().replace(/\s+/g, "");
   }
 
   function isCloudinaryUrl(url){
@@ -359,7 +349,6 @@
     catch{ return false; }
   }
 
-  // Insert Cloudinary transform right after "/upload/"
   function withTransform(url, transform){
     const needle = "/upload/";
     const i = url.indexOf(needle);
@@ -371,147 +360,105 @@
   }
 
   function thumbUrl(url){
-    return isCloudinaryUrl(url)
+    return (isCloudinaryUrl(url))
       ? withTransform(url, "f_auto,q_auto,w_600,h_600,c_fill,g_auto")
       : url;
-  }
-
-  function cloudinaryVersionAsNumber(url){
-    const m = url.match(/\/upload\/v(\d+)\//);
-    return m ? Number(m[1]) : 0;
   }
 
   function getMyId(){
     const params = new URLSearchParams(window.location.search);
     const idFromUrl = params.get("id");
     if (idFromUrl) return String(idFromUrl).trim();
-
     const stored = sessionStorage.getItem("playerId");
     return stored ? String(stored).trim() : "";
   }
 
-  function uniqStrings(arr){
-    const s = new Set();
-    const out = [];
-    for (const x of arr){
-      const v = String(x || "").trim();
-      if (!v) continue;
-      if (s.has(v)) continue;
-      s.add(v);
-      out.push(v);
-    }
-    return out;
-  }
-
-  // ===== Extract images from rows (gallery + evidence + deep scan) =====
-  function extractImagesFromRow(row){
-    const out = [];
-    const name = (row?.name || "").trim() || "Okänd";
-    const lowerName = name.toLowerCase();
-    if (EXCLUDE_NAMES.includes(lowerName)) return out;
-
-    // row.gallery can be JSON array string, single URL, etc.
-    if (row && row.gallery){
-      const g = row.gallery;
-      const parsed = typeof g === "string" ? safeJsonParse(g, null) : g;
-
-      if (Array.isArray(parsed)){
-        for (const u of parsed){
-          if (isProbablyImageUrl(u)) out.push({ url: String(u).trim(), name, v: cloudinaryVersionAsNumber(u) });
-        }
-      } else if (typeof parsed === "string"){
-        if (isProbablyImageUrl(parsed)) out.push({ url: parsed.trim(), name, v: cloudinaryVersionAsNumber(parsed) });
-      } else if (parsed && typeof parsed === "object"){
-        // If someone stored object structure, grab any image-like strings inside
-        const seen = new Set();
-        (function walk(x){
-          if (x == null) return;
-          if (typeof x === "string"){
-            if (isProbablyImageUrl(x) && !seen.has(x)){
-              seen.add(x);
-              out.push({ url: x.trim(), name, v: cloudinaryVersionAsNumber(x) });
-            }
-            return;
-          }
-          if (Array.isArray(x)){ for (const a of x) walk(a); return; }
-          if (typeof x === "object"){ for (const k of Object.keys(x)) walk(x[k]); }
-        })(parsed);
-      }
-    }
-
-    // row.data JSON
-    let data = {};
-    if (row && row.data){
-      data = typeof row.data === "string" ? safeJsonParse(row.data, {}) : (row.data || {});
-    }
-
-    // challengeEvidence photos: [{type:"photo", value:"..."}]
-    if (Array.isArray(data.challengeEvidence)){
-      for (const evid of data.challengeEvidence){
-        if (evid && typeof evid === "object" && evid.type === "photo" && isProbablyImageUrl(evid.value)){
-          const u = String(evid.value).trim();
-          out.push({ url: u, name, v: cloudinaryVersionAsNumber(u) });
-        }
-      }
-    }
-
-    // Deep scan in data for any image-like string
-    const seen2 = new Set();
-    (function walk(x){
-      if (x == null) return;
-      if (typeof x === "string"){
-        if (isProbablyImageUrl(x) && !seen2.has(x)){
-          seen2.add(x);
-          out.push({ url: x.trim(), name, v: cloudinaryVersionAsNumber(x) });
-        }
-        return;
-      }
-      if (Array.isArray(x)){ for (const a of x) walk(a); return; }
-      if (typeof x === "object"){ for (const k of Object.keys(x)) walk(x[k]); }
-    })(data);
-
-    return out;
-  }
-
-  // Dedup by URL, keep ONE name (prefer non-"Okänd")
-  function uniqByUrlKeepName(items){
+  async function fetchPlayersMap(){
+    // Builds a map: imageUrl -> playerName (based on what you store in Sheety.gallery)
     const map = new Map();
-    for (const it of items){
-      if (!it?.url) continue;
-      const u = it.url.trim();
-      if (!u) continue;
 
-      if (!map.has(u)){
-        map.set(u, { url:u, name: it.name || "Okänd", v: it.v || cloudinaryVersionAsNumber(u) });
-      } else {
-        const cur = map.get(u);
-        cur.v = Math.max(cur.v || 0, it.v || 0);
-        // prefer a real name over Okänd
-        if ((cur.name || "").toLowerCase() === "okänd" && it.name) cur.name = it.name;
+    try{
+      const res = await fetch(SHEETY_API_URL, { cache: "no-store" });
+      if (!res.ok) return map;
+      const json = await res.json();
+      const key = Object.keys(json)[0];
+      const rows = json[key] || [];
+
+      for (const row of rows){
+        const name = (row?.name || "").trim() || "Okänd";
+        if (!row?.gallery) continue;
+
+        const parsed = (typeof row.gallery === "string") ? safeJsonParse(row.gallery, row.gallery) : row.gallery;
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+
+        for (const u of arr){
+          const nu = normalizeUrl(u);
+          if (!nu) continue;
+          if (!map.has(nu)) map.set(nu, name);
+        }
       }
+    }catch{
+      // ignore
     }
-    return Array.from(map.values());
+    return map;
   }
 
-  // ===== State =====
-  let allItems = [];   // [{url, name, v}]
-  let viewItems = [];
-  let current = null;
-  let myName = "";
+async function fetchCloudinaryTagList() {
+  const candidates = Array.from(new Set([
+    EVENT_TAG,
+    EVENT_TAG.toLowerCase(),
+    EVENT_TAG.charAt(0).toUpperCase() + EVENT_TAG.slice(1),
+  ]));
 
-  // ===== Render =====
-  function render(){
+  let lastErrText = "";
+
+  for (const tag of candidates) {
+    const listUrl =
+      `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${encodeURIComponent(tag)}.json?t=${Date.now()}`;
+
+    const res = await fetch(listUrl, { cache: "no-store" });
+
+    if (res.ok) {
+      const json = await res.json();
+      // if this worked, update tag so UI tells the truth
+      window.__ACTIVE_TAG__ = tag;
+      return json;
+    }
+
+    // capture response text (Cloudinary often returns useful error strings)
+    try { lastErrText = await res.text(); } catch {}
+
+    // if it's NOT 404, it’s not “tag missing” — bubble it up
+    if (res.status !== 404) {
+      throw new Error(`Cloudinary list error (HTTP ${res.status}) for tag "${tag}": ${lastErrText || "(no body)"}`);
+    }
+  }
+
+  throw new Error(
+    `Cloudinary list error (HTTP 404). Tag not found or list still restricted.\n` +
+    `Tried: ${candidates.join(", ")}\n` +
+    (lastErrText ? `Body: ${lastErrText}` : "")
+  );
+}
+
+
+  function buildOriginalUrlFromListItem(r){
+    // Standard delivery URL
+    return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${r.version}/${r.public_id}.${r.format}`;
+  }
+
+  function render(items){
     const grid = $("grid");
     grid.innerHTML = "";
 
-    $("countChip").textContent = `${viewItems.length} bilder`;
-    $("subText").textContent = viewItems.length
-      ? `Alla uppladdade bilder under eventet.`
+    $("countChip").textContent = `${items.length} bilder`;
+    $("subText").textContent = items.length
+      ? `Visar alla Cloudinary-bilder med tagg: ${EVENT_TAG}`
       : `Inga bilder hittades ännu.`;
 
-    $("empty").style.display = viewItems.length ? "none" : "block";
+    $("empty").style.display = items.length ? "none" : "block";
 
-    for (const it of viewItems){
+    for (const it of items){
       const tile = document.createElement("div");
       tile.className = "tile";
       tile.addEventListener("click", ()=>openModal(it));
@@ -528,9 +475,7 @@
       nameTag.className = "nameTag";
       nameTag.textContent = it.name || "Okänd";
 
-      badge.appendChild(nameTag);
       tile.appendChild(img);
-      tile.appendChild(badge);
       grid.appendChild(tile);
     }
   }
@@ -560,34 +505,17 @@
     }
   }
 
-  async function copyAllLinks(){
-    const links = viewItems.map(x => x.url).join("\n");
-    if (!links.trim()){
-      toast("Inga länkar att kopiera.");
-      return;
-    }
-    try{
-      await navigator.clipboard.writeText(links);
-      toast("Länkar kopierade!");
-    }catch{
-      prompt("Kopiera länkar:", links);
-    }
-  }
 
-  // ===== Save to phone gallery (best possible in browser) =====
   async function saveToPhoneGallery(url, filename){
-    // Browsers cannot directly write into Photos/Gallery.
-    // Best UX: Share Sheet with an image File -> user taps "Save Image" / "Add to Photos".
+    // Best effort: share sheet with real image file => "Save Image/Add to Photos"
     try{
       if (!navigator.share) throw new Error("No Web Share");
-
       const res = await fetch(url, { mode: "cors" });
       if (!res.ok) throw new Error("Fetch failed: " + res.status);
 
       const blob = await res.blob();
       const type = blob.type || "image/jpeg";
       const safeName = (filename || "image.jpg").replace(/[^\w.\-]+/g, "_");
-
       const file = new File([blob], safeName, { type });
 
       if (navigator.canShare && !navigator.canShare({ files: [file] })) {
@@ -599,25 +527,32 @@
         text: "Välj 'Spara bild' / 'Lägg till i Bilder'",
         files: [file]
       });
-      return;
     } catch (e) {
-      // Fallback: open image normally; user long-press -> Save Image
       window.open(url, "_blank", "noopener");
       alert("Tips: Håll fingret på bilden och välj 'Spara bild' / 'Lägg till i Bilder'.");
     }
   }
 
-  // ===== Sheety helpers =====
-  async function fetchAllRows(){
-    const res = await fetch(API_URL, { cache:"no-store" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const json = await res.json();
-    const key = Object.keys(json)[0];
-    return json[key] || [];
+  // ===== Upload =====
+  async function uploadToCloudinary(file){
+    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+    const form = new FormData();
+    form.append("file", file);
+    form.append("upload_preset", UPLOAD_PRESET);
+
+    // Tag + folder (allowed for unsigned upload)
+    form.append("tags", EVENT_TAG);
+    if (EVENT_FOLDER) form.append("folder", EVENT_FOLDER);
+
+    const res = await fetch(endpoint, { method:"POST", body: form });
+    if (!res.ok) throw new Error("Upload misslyckades (HTTP " + res.status + ")");
+    const data = await res.json();
+    if (!data.secure_url) throw new Error("Ingen secure_url från Cloudinary");
+    return data.secure_url;
   }
 
   async function getRowById(id){
-    const res = await fetch(`${API_URL}/${id}`, { cache:"no-store" });
+    const res = await fetch(`${SHEETY_API_URL}/${id}`, { cache:"no-store" });
     if (!res.ok) throw new Error("Kunde inte läsa spelare (HTTP " + res.status + ")");
     const json = await res.json();
     const key = Object.keys(json)[0];
@@ -632,14 +567,26 @@
       const parsed = safeJsonParse(galleryValue, null);
       if (Array.isArray(parsed)) return parsed.filter(Boolean);
       if (typeof parsed === "string") return [parsed].filter(Boolean);
-      // if it was just a URL string (not JSON)
       return [galleryValue].filter(Boolean);
     }
     return [];
   }
 
+  function uniqStrings(arr){
+    const s = new Set();
+    const out = [];
+    for (const x of arr){
+      const v = normalizeUrl(x);
+      if (!v) continue;
+      if (s.has(v)) continue;
+      s.add(v);
+      out.push(v);
+    }
+    return out;
+  }
+
   async function putRowGallery(id, galleryArray){
-    await fetch(`${API_URL}/${id}`, {
+    await fetch(`${SHEETY_API_URL}/${id}`, {
       method: "PUT",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({
@@ -648,92 +595,25 @@
     });
   }
 
-  // ===== Cloudinary upload =====
-  async function uploadToCloudinary(file){
-    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-    const form = new FormData();
-    form.append("file", file);
-    form.append("upload_preset", UPLOAD_PRESET);
-
-    const res = await fetch(endpoint, { method:"POST", body: form });
-    if (!res.ok) throw new Error("Upload misslyckades (HTTP " + res.status + ")");
-    const data = await res.json();
-    if (!data.secure_url) throw new Error("Ingen secure_url från Cloudinary");
-    return data.secure_url;
-  }
-
-  async function appendUploadToMyGallery(url){
+  async function appendUploadToMySheetyGallery(url){
     const myId = getMyId();
-    if (!myId){
-      throw new Error("Saknar ?id=... (kan inte spara till ditt konto)");
-    }
+    if (!myId) return; // allow uploads even if not logged in, but no per-user tracking then
 
-    // Read latest row -> merge -> write (minimizes overwriting other uploads)
     const row = await getRowById(myId);
     const arr = normalizeGalleryToArray(row.gallery);
     const next = uniqStrings([url, ...arr]);
     await putRowGallery(myId, next);
   }
 
-  // ===== Load gallery =====
-  async function loadAllImages(){
-    setStatus("Laddar från Sheety…");
-    $("empty").style.display = "none";
-    $("grid").innerHTML = "";
-
-    try{
-      const rows = await fetchAllRows();
-
-      // Optional: find my name (for status)
-      const myId = getMyId();
-      if (myId){
-        const myRow = rows.find(r => String(r.id) === String(myId));
-        myName = (myRow?.name || "").trim();
-        if (myName) sessionStorage.setItem("playerName", myName);
-      } else {
-        myName = sessionStorage.getItem("playerName") || "";
-      }
-
-      let extracted = [];
-      for (const row of rows){
-        extracted = extracted.concat(extractImagesFromRow(row));
-      }
-
-      allItems = uniqByUrlKeepName(extracted)
-        .sort((a,b) => (b.v || 0) - (a.v || 0) || a.url.localeCompare(b.url));
-
-      viewItems = allItems;
-      render();
-
-      const uploadEnabled = !!getMyId();
-      $("uploadLabel").style.display = "inline-flex";
-      $("fileInput").disabled = !uploadEnabled;
-
-      if (uploadEnabled){
-        setStatus(`Klar ✅ ${allItems.length} bilder. Du är: ${myName || "spelare"} (id: ${getMyId()})`);
-      } else {
-        setStatus(`Klar ✅ ${allItems.length} bilder. (Tips: öppna via login så får du ?id=... och kan ladda upp)`);
-      }
-    }catch(err){
-      console.error(err);
-      setStatus("");
-      $("empty").style.display = "block";
-      $("empty").textContent = "Kunde inte hämta bilder. Kontrollera Sheety-URL och CORS.";
-    }
-  }
-
-  // ===== Upload handler (multi) =====
   async function handleUpload(files){
     const list = Array.from(files || []);
     if (!list.length) return;
 
-    const myId = getMyId();
-    if (!myId){
-      alert("Du kan inte ladda upp här utan att vara inloggad.\nÖppna via login så får du ?id=...");
-      return;
-    }
-
     $("fileInput").value = "";
+    isUploading = true;
+    $("refreshBtn").disabled = true;
+    $("fileInput").disabled = true;
+
     let ok = 0;
 
     for (let i = 0; i < list.length; i++){
@@ -742,20 +622,20 @@
         setStatus(`Laddar upp (${i+1}/${list.length})…`);
         const url = await uploadToCloudinary(f);
 
-        setStatus(`Sparar till ditt galleri (${i+1}/${list.length})…`);
-        await appendUploadToMyGallery(url);
+        // store URL in Sheety (so we can show who uploaded)
+        await appendUploadToMySheetyGallery(url);
 
         ok++;
-      }catch(err){
+      } catch (err){
         console.error(err);
-        alert(
-          "Uppladdningen misslyckades:\n\n" +
-          (err?.message || err) +
-          "\n\nTips: Cloudinary preset måste vara UNSIGNED och heta exakt: " + UPLOAD_PRESET
-        );
+        alert("Uppladdning misslyckades:\n\n" + (err?.message || err));
         break;
       }
     }
+
+    isUploading = false;
+    $("refreshBtn").disabled = false;
+    $("fileInput").disabled = false;
 
     if (ok){
       toast(`Uppladdat! (${ok}/${list.length})`);
@@ -765,9 +645,43 @@
     }
   }
 
+  // ===== Main load =====
+  async function loadAllImages({ silent=false } = {}){
+    if (!silent) setStatus("Laddar bilder från Cloudinary…");
+
+    try{
+      // 1) Load tag list from Cloudinary
+      const listJson = await fetchCloudinaryTagList();
+      const resources = Array.isArray(listJson.resources) ? listJson.resources : [];
+
+      // 2) Build URLs
+      const urls = resources
+        .map(buildOriginalUrlFromListItem)
+        .map(normalizeUrl);
+
+      // 3) Load Sheety map url->name (best-effort)
+      const nameMap = await fetchPlayersMap();
+
+      // 4) Merge
+      allItems = urls.map(u => ({
+        url: u,
+        name: nameMap.get(u) || "Okänd"
+      }));
+
+      render(allItems);
+
+      if (!silent) setStatus(`Klar ✅ ${allItems.length} bilder (tagg: ${EVENT_TAG})`);
+    } catch (err){
+      console.error(err);
+      if (!silent) setStatus("");
+      $("empty").style.display = "block";
+      $("empty").textContent =
+        "Kunde inte hämta Cloudinary-listan. Kontrollera att 'Resource list' är aktiverad och att bilderna har taggen.";
+    }
+  }
+
   // ===== Events =====
-  $("refreshBtn").addEventListener("click", loadAllImages);
-  $("copyLinksBtn").addEventListener("click", copyAllLinks);
+  $("refreshBtn").addEventListener("click", () => loadAllImages());
 
   $("fileInput").addEventListener("change", (e) => {
     handleUpload(e.target.files);
@@ -781,11 +695,18 @@
   $("saveBtn").addEventListener("click", async () => {
     if (!current?.url) return;
     const who = current?.name || "Ingrid80";
-    await saveToPhoneGallery(current.url, `${who}_Ingrid80.jpg`);
+    await saveToPhoneGallery(current.url, `${who}_${EVENT_TAG}.jpg`);
   });
 
-  // Init
-  loadAllImages();
+  // Init + auto refresh
+  (async function init(){
+    await loadAllImages();
+    setInterval(() => {
+      if (isUploading) return;
+      if ($("modal").classList.contains("open")) return;
+      loadAllImages({ silent:true });
+    }, AUTO_REFRESH_MS);
+  })();
 </script>
 </body>
 </html>
