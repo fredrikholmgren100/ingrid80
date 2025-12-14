@@ -506,32 +506,64 @@ async function fetchCloudinaryTagList() {
   }
 
 
-  async function saveToPhoneGallery(url, filename){
-    // Best effort: share sheet with real image file => "Save Image/Add to Photos"
-    try{
-      if (!navigator.share) throw new Error("No Web Share");
-      const res = await fetch(url, { mode: "cors" });
-      if (!res.ok) throw new Error("Fetch failed: " + res.status);
+function isDesktopDevice() {
+  // “pointer: coarse” is typically phones/tablets. Desktop mouse/trackpad is “fine”.
+  const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  const touch = (navigator.maxTouchPoints || 0) > 0;
+  return !(coarse || touch);
+}
 
-      const blob = await res.blob();
-      const type = blob.type || "image/jpeg";
-      const safeName = (filename || "image.jpg").replace(/[^\w.\-]+/g, "_");
-      const file = new File([blob], safeName, { type });
+async function shareToPhonePhotos(url, filename) {
+  try{
+    if (!navigator.share) throw new Error("No Web Share");
 
-      if (navigator.canShare && !navigator.canShare({ files: [file] })) {
-        throw new Error("canShare(files) false");
-      }
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) throw new Error("Fetch failed: " + res.status);
 
-      await navigator.share({
-        title: "Spara bild",
-        text: "Välj 'Spara bild' / 'Lägg till i Bilder'",
-        files: [file]
-      });
-    } catch (e) {
-      window.open(url, "_blank", "noopener");
-      alert("Tips: Håll fingret på bilden och välj 'Spara bild' / 'Lägg till i Bilder'.");
+    const blob = await res.blob();
+    const type = blob.type || "image/jpeg";
+    const safeName = (filename || "image.jpg").replace(/[^\w.\-]+/g, "_");
+    const file = new File([blob], safeName, { type });
+
+    if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+      throw new Error("canShare(files) false");
     }
+
+    await navigator.share({
+      title: "Spara bild",
+      text: "Välj 'Spara bild' / 'Lägg till i Bilder'",
+      files: [file]
+    });
+  } catch (e) {
+    // fallback: open image so user can long-press -> Save Image
+    window.open(url, "_blank", "noopener");
+    alert("Tips: Håll fingret på bilden och välj 'Spara bild' / 'Lägg till i Bilder'.");
   }
+}
+
+async function downloadOnDesktop(url, filename) {
+  // Force a download (works best vs <a download> on cross-origin URLs)
+  try{
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) throw new Error("Fetch failed: " + res.status);
+
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = (filename || "image.jpg").replace(/[^\w.\-]+/g, "_");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(objectUrl);
+  } catch (e) {
+    // fallback: open it (user can right-click -> Save image as)
+    window.open(url, "_blank", "noopener");
+  }
+}
+
 
   // ===== Upload =====
   async function uploadToCloudinary(file){
@@ -692,11 +724,18 @@ async function fetchCloudinaryTagList() {
   $("modal").addEventListener("click", (e)=>{ if (e.target === $("modal")) closeModal(); });
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeModal(); });
 
-  $("saveBtn").addEventListener("click", async () => {
-    if (!current?.url) return;
-    const who = current?.name || "Ingrid80";
-    await saveToPhoneGallery(current.url, `${who}_${EVENT_TAG}.jpg`);
-  });
+$("saveBtn").addEventListener("click", async () => {
+  if (!current?.url) return;
+
+  const fileName = `Ingrid80_${Date.now()}.jpg`;
+
+  if (isDesktopDevice()) {
+    await downloadOnDesktop(current.url, fileName);   // ✅ desktop = download
+  } else {
+    await shareToPhonePhotos(current.url, fileName);  // ✅ phone = save to Photos via share
+  }
+});
+
 
   // Init + auto refresh
   (async function init(){
