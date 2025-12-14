@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f4f6ff" />
+  <title>Ingrid 80 — Galleri</title>
+  <style>
+    :root{
+      --accent:#5b5ce2;
+      --accent2:#7c3aed;
+      --bg1:#f7f8ff;
+      --bg2:#eef2ff;
+      --card:#ffffffcc;
+      --border:rgba(15,23,42,.12);
+      --text:#0f172a;
+      --muted:#475569;
+      --shadow: 0 12px 34px rgba(15,23,42,.10);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 700px at 20% 0%, rgba(91,92,226,.14), transparent 55%),
+        radial-gradient(900px 650px at 85% 20%, rgba(124,58,237,.12), transparent 55%),
+        linear-gradient(180deg,var(--bg1),var(--bg2));
+      min-height:100vh;
+      padding: env(safe-area-inset-top) 14px env(safe-area-inset-bottom);
+    }
+    header{
+      max-width:1100px;
+      margin:0 auto;
+      padding:18px 6px 8px;
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    h1{ margin:0; font-size:20px; letter-spacing:.2px; }
+    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; font-weight:600; }
+    .chip{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.7);
+      padding:6px 10px;
+      border-radius:999px;
+    }
+    .wrap{ max-width:1100px; margin:0 auto; padding:8px 6px 22px; }
+
+    .toolbar{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:12px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(10px);
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      width:100%;
+    }
+    .btn{
+      appearance:none;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.9);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:900;
+      font-size:14px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      box-shadow: 0 8px 18px rgba(15,23,42,.08);
+      user-select:none;
+    }
+    .btn.primary{
+      border:none;
+      color:white;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      box-shadow: 0 12px 22px rgba(91,92,226,.22);
+    }
+    .btn:active{transform:translateY(1px)}
+    .spacer{flex:1}
+
+    .status{
+      color:var(--muted);
+      font-weight:800;
+      font-size:13px;
+      padding:2px 2px 0;
+      line-height:1.35;
+      width:100%;
+    }
+
+    input[type="file"]{ display:none; }
+
+    .grid{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (min-width:560px){ .grid{grid-template-columns: repeat(5, minmax(0, 1fr));} }
+    @media (min-width:900px){ .grid{grid-template-columns: repeat(7, minmax(0, 1fr));} }
+
+    .tile{
+      position:relative;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      background:rgba(15,23,42,.03);
+      box-shadow: 0 10px 22px rgba(15,23,42,.08);
+      cursor:pointer;
+    }
+    .tile img{
+      width:100%;
+      aspect-ratio:1/1;
+      object-fit:cover;
+      display:block;
+    }
+    .badge{
+      position:absolute;
+      left:8px;
+      bottom:8px;
+      right:8px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+    }
+    .nameTag{
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:12px;
+      font-weight:900;
+      color:#0f172a;
+      background:rgba(255,255,255,.88);
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:999px;
+      padding:6px 10px;
+      backdrop-filter: blur(6px);
+    }
+
+    .empty{
+      margin-top:14px;
+      padding:18px;
+      border:1px dashed var(--border);
+      border-radius:var(--radius);
+      background:rgba(255,255,255,.55);
+      color:var(--muted);
+      font-weight:800;
+      text-align:center;
+    }
+
+    /* Viewer modal */
+    .modal{
+      position:fixed; inset:0;
+      display:none;
+      z-index:50;
+      padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+      background:rgba(15,23,42,.40);
+      align-items:center;
+      justify-content:center;
+    }
+    .modal.open{display:flex}
+    .card{
+      width:min(980px, 96vw);
+      background:rgba(255,255,255,.97);
+      border:1px solid var(--border);
+      border-radius:22px;
+      overflow:hidden;
+      box-shadow:0 26px 80px rgba(15,23,42,.30);
+      display:flex;
+      flex-direction:column;
+    }
+    .bar{
+      display:flex; align-items:center; gap:10px;
+      padding:12px;
+      border-bottom:1px solid rgba(15,23,42,.10);
+    }
+    .title{
+      flex:1;
+      font-weight:900;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .iconbtn{
+      width:40px; height:40px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.92);
+      cursor:pointer;
+      font-weight:900;
+    }
+    .viewer{
+      background:rgba(15,23,42,.03);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      max-height:72vh;
+    }
+    .viewer img{
+      width:100%;
+      height:auto;
+      max-height:72vh;
+      object-fit:contain;
+      user-select:none;
+    }
+    .footer{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      padding:12px;
+      border-top:1px solid rgba(15,23,42,.10);
+    }
+    a.btnLink{
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background: rgba(255,255,255,.96);
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:13px;
+      display:none;
+      z-index:60;
+      box-shadow: 0 12px 30px rgba(15,23,42,.16);
+      font-weight:800;
+    }
+    .toast.show{display:block}
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>
+      <h1>📸 Ingrid 80 — Galleri</h1>
+      <div class="sub" id="subText">Laddar bilder…</div>
+    </div>
+    <div class="chip" id="countChip">0 bilder</div>
+  </header>
+
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="row">
+        <button class="btn primary" id="refreshBtn">🔁 Uppdatera</button>
+
+        <label class="btn" for="fileInput" title="Ladda upp fler bilder till ditt galleri">
+          📷 Ladda upp
+        </label>
+        <input id="fileInput" type="file" accept="image/*" multiple capture="environment" />
+
+        <span class="spacer"></span>
+
+        <button class="btn" id="copyLinksBtn" title="Kopiera alla bildlänkar">📋 Kopiera länkar</button>
+      </div>
+
+      <div class="status" id="statusText"></div>
+    </div>
+
+    <div id="grid" class="grid" aria-live="polite"></div>
+    <div id="empty" class="empty" style="display:none;">Inga bilder hittades ännu.</div>
+  </div>
+
+  <!-- Viewer -->
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Bildvisare">
+    <div class="card">
+      <div class="bar">
+        <button class="iconbtn" id="closeBtn" aria-label="Stäng">✕</button>
+        <div class="title" id="modalTitle">Bild</div>
+        <button class="iconbtn" id="copyBtn" aria-label="Kopiera länk">⧉</button>
+      </div>
+      <div class="viewer">
+        <img id="modalImg" alt="" />
+      </div>
+      <div class="footer">
+        <a class="btn btnLink" id="openBtn" target="_blank" rel="noopener">🔎 Öppna</a>
+        <a class="btn btnLink" id="downloadBtn" target="_blank" rel="noopener">⬇️ Ladda ner</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  // ===== CONFIG =====
+  const API_URL = "https://api.sheety.co/19d52e6f83ab4563121d3da380c48d62/bingoPlayers/blad1";
+
+  // Cloudinary (unsigned upload)
+  const CLOUD_NAME = "dtweoqypu";
+  const UPLOAD_PRESET = "Ingrid80";
+
+  const EXCLUDE_NAMES = ["dev"]; // hide judge account
+
+  // ===== DOM =====
+  const $ = (id) => document.getElementById(id);
+
+  // ===== Helpers =====
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(()=>t.classList.remove("show"), 1600);
+  }
+
+  function safeJsonParse(str, fallback){
+    try { return JSON.parse(str); } catch { return fallback; }
+  }
+
+  function isProbablyImageUrl(s){
+    if (typeof s !== "string") return false;
+    const url = s.trim();
+    if (!/^https?:\/\//i.test(url)) return false;
+    if (url.includes("res.cloudinary.com/")) return true;
+    return /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(url);
+  }
+
+  function isCloudinaryUrl(url){
+    try{ return new URL(url).hostname === "res.cloudinary.com"; }
+    catch{ return false; }
+  }
+
+  // Insert Cloudinary transform right after "/upload/"
+  function withTransform(url, transform){
+    const needle = "/upload/";
+    const i = url.indexOf(needle);
+    if (i === -1) return url;
+    const head = url.slice(0, i + needle.length);
+    const tail = url.slice(i + needle.length);
+    const t = String(transform || "").replace(/^\//,"").replace(/\/$/,"");
+    return head + t + "/" + tail;
+  }
+
+  function thumbUrl(url){
+    return isCloudinaryUrl(url)
+      ? withTransform(url, "f_auto,q_auto,w_600,h_600,c_fill,g_auto")
+      : url;
+  }
+
+  function downloadUrl(url, filename){
+    if (!isCloudinaryUrl(url)) return url;
+    const safe = (filename || "Ingrid80")
+      .replace(/[^\w\-]+/g,"_")
+      .slice(0,60);
+    return withTransform(url, "fl_attachment:" + encodeURIComponent(safe));
+  }
+
+  function cloudinaryVersionAsNumber(url){
+    const m = url.match(/\/upload\/v(\d+)\//);
+    return m ? Number(m[1]) : 0;
+  }
+
+  function uniqByUrl(items){
+    const map = new Map();
+    for (const it of items){
+      if (!it || !it.url) continue;
+      const u = it.url.trim();
+      if (!u) continue;
+
+      if (!map.has(u)){
+        map.set(u, { url:u, names:new Set(), v: cloudinaryVersionAsNumber(u) });
+      }
+      const obj = map.get(u);
+      if (it.name) obj.names.add(it.name);
+      if (it.v) obj.v = Math.max(obj.v, it.v);
+    }
+    return Array.from(map.values()).map(x => ({
+      url: x.url,
+      names: Array.from(x.names),
+      v: x.v
+    }));
+  }
+
+  function getMyId(){
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    return id ? String(id).trim() : "";
+  }
+
+  function extractImagesFromRow(row){
+    const out = [];
+    const name = (row?.name || "").trim() || "Okänd";
+    const lowerName = name.toLowerCase();
+    if (EXCLUDE_NAMES.includes(lowerName)) return out;
+
+    // 1) row.gallery
+    if (row && row.gallery){
+      const g = row.gallery;
+      const parsed = typeof g === "string" ? safeJsonParse(g, null) : g;
+
+      if (Array.isArray(parsed)){
+        for (const u of parsed){
+          if (isProbablyImageUrl(u)) out.push({ url: u, name, v: cloudinaryVersionAsNumber(u) });
+        }
+      } else if (typeof parsed === "string"){
+        if (isProbablyImageUrl(parsed)) out.push({ url: parsed, name, v: cloudinaryVersionAsNumber(parsed) });
+      }
+    }
+
+    // 2) row.data JSON => challengeEvidence photos + deep scan for image-like strings
+    let data = {};
+    if (row && row.data){
+      data = typeof row.data === "string" ? safeJsonParse(row.data, {}) : (row.data || {});
+    }
+
+    // challengeEvidence: [{type:"photo", value:"..."}]
+    if (Array.isArray(data.challengeEvidence)){
+      for (const evid of data.challengeEvidence){
+        if (evid && typeof evid === "object" && evid.type === "photo" && isProbablyImageUrl(evid.value)){
+          const u = String(evid.value).trim();
+          out.push({ url: u, name, v: cloudinaryVersionAsNumber(u) });
+        }
+      }
+    }
+
+    // Deep scan (catches other stored photo URLs)
+    const seen = new Set();
+    function walk(x){
+      if (x == null) return;
+      if (typeof x === "string"){
+        if (isProbablyImageUrl(x) && !seen.has(x)){
+          seen.add(x);
+          out.push({ url: x, name, v: cloudinaryVersionAsNumber(x) });
+        }
+        return;
+      }
+      if (Array.isArray(x)){ for (const a of x) walk(a); return; }
+      if (typeof x === "object"){ for (const k of Object.keys(x)) walk(x[k]); }
+    }
+    walk(data);
+
+    return out;
+  }
+
+  // ===== State =====
+  let allItems = [];   // [{url, names[], v}]
+  let viewItems = [];
+  let current = null;
+
+  function setStatus(msg){ $("statusText").textContent = msg || ""; }
+
+  function render(){
+    const grid = $("grid");
+    grid.innerHTML = "";
+
+    $("countChip").textContent = `${viewItems.length} bilder`;
+    $("subText").textContent = allItems.length
+      ? `Alla uppladdade bilder under eventet (totalt ${allItems.length}).`
+      : `Inga bilder hittades ännu.`;
+
+    $("empty").style.display = viewItems.length ? "none" : "block";
+
+    for (const it of viewItems){
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.addEventListener("click", ()=>openModal(it));
+
+      const img = document.createElement("img");
+      img.loading = "lazy";
+      img.alt = "Bild";
+      img.src = thumbUrl(it.url);
+
+      const badge = document.createElement("div");
+      badge.className = "badge";
+
+      const nameTag = document.createElement("div");
+      nameTag.className = "nameTag";
+      if (it.names?.length){
+        nameTag.textContent = it.names.length === 1 ? it.names[0] : `${it.names[0]} +${it.names.length-1}`;
+      } else {
+        nameTag.textContent = "Okänd";
+      }
+
+      badge.appendChild(nameTag);
+
+      tile.appendChild(img);
+      tile.appendChild(badge);
+      grid.appendChild(tile);
+    }
+  }
+
+  function openModal(item){
+    current = item;
+    const who = item.names?.[0] ? `${item.names[0]} — ` : "";
+    $("modalTitle").textContent = who + (item.url.split("/").pop() || "Bild");
+    $("modalImg").src = item.url;
+
+    $("openBtn").href = item.url;
+
+    const filenameBase = (item.names?.[0] || "Ingrid80") + "_Ingrid80";
+    $("downloadBtn").href = downloadUrl(item.url, filenameBase);
+
+    $("modal").classList.add("open");
+  }
+
+  function closeModal(){
+    $("modal").classList.remove("open");
+    $("modalImg").src = "";
+    current = null;
+  }
+
+  async function copyCurrent(){
+    if (!current?.url) return;
+    try{
+      await navigator.clipboard.writeText(current.url);
+      toast("Kopierat!");
+    }catch{
+      toast("Kunde inte kopiera.");
+    }
+  }
+
+  async function copyAllLinks(){
+    const links = viewItems.map(x => x.url).join("\n");
+    if (!links.trim()){
+      toast("Inga länkar att kopiera.");
+      return;
+    }
+    try{
+      await navigator.clipboard.writeText(links);
+      toast("Länkar kopierade!");
+    }catch{
+      prompt("Kopiera länkar:", links);
+    }
+  }
+
+  // ===== Sheety helpers =====
+  async function getRowById(id){
+    const res = await fetch(`${API_URL}/${id}`, { cache:"no-store" });
+    if (!res.ok) throw new Error("Kunde inte läsa spelare (HTTP " + res.status + ")");
+    const json = await res.json();
+    const key = Object.keys(json)[0];
+    return json[key]; // row object
+  }
+
+  async function putRowGallery(id, galleryArray){
+    await fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({
+        blad1: { gallery: JSON.stringify(galleryArray) }
+      })
+    });
+  }
+
+  function normalizeGalleryToArray(galleryValue){
+    if (!galleryValue) return [];
+    if (Array.isArray(galleryValue)) return galleryValue.filter(Boolean);
+
+    if (typeof galleryValue === "string"){
+      const parsed = safeJsonParse(galleryValue, null);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      if (typeof parsed === "string") return [parsed].filter(Boolean);
+      // if it was just a URL string (not JSON)
+      return [galleryValue].filter(Boolean);
+    }
+
+    if (typeof galleryValue === "string") return [galleryValue].filter(Boolean);
+    return [];
+  }
+
+  function uniqStrings(arr){
+    const s = new Set();
+    const out = [];
+    for (const x of arr){
+      const v = String(x || "").trim();
+      if (!v) continue;
+      if (s.has(v)) continue;
+      s.add(v);
+      out.push(v);
+    }
+    return out;
+  }
+
+  // ===== Cloudinary upload =====
+  async function uploadToCloudinary(file){
+    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+    const form = new FormData();
+    form.append("file", file);
+    form.append("upload_preset", UPLOAD_PRESET);
+
+    const res = await fetch(endpoint, { method:"POST", body: form });
+    if (!res.ok) throw new Error("Upload misslyckades (HTTP " + res.status + ")");
+    const data = await res.json();
+    if (!data.secure_url) throw new Error("Ingen secure_url från Cloudinary");
+    return data.secure_url;
+  }
+
+  async function appendUploadToMyGallery(url){
+    const myId = getMyId();
+    if (!myId){
+      // we can’t safely attach to a player without id
+      throw new Error("Saknar ?id=... (kan inte spara till ditt konto)");
+    }
+
+    const row = await getRowById(myId);
+    const arr = normalizeGalleryToArray(row.gallery);
+    const next = uniqStrings([url, ...arr]);
+    await putRowGallery(myId, next);
+  }
+
+  // ===== Data load =====
+  async function loadAllImages(){
+    setStatus("Laddar från Sheety…");
+    $("empty").style.display = "none";
+    $("grid").innerHTML = "";
+
+    try{
+      const res = await fetch(API_URL, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+
+      const json = await res.json();
+      const key = Object.keys(json)[0];
+      const rows = json[key] || [];
+
+      let extracted = [];
+      for (const row of rows){
+        extracted = extracted.concat(extractImagesFromRow(row));
+      }
+
+      allItems = uniqByUrl(extracted)
+        .sort((a,b) => (b.v || 0) - (a.v || 0) || a.url.localeCompare(b.url));
+
+      viewItems = allItems;
+      render();
+
+      const myId = getMyId();
+      if (myId){
+        setStatus(`Klar ✅ Hämtade ${allItems.length} unika bilder. (Din id: ${myId})`);
+      } else {
+        setStatus(`Klar ✅ Hämtade ${allItems.length} unika bilder. (Tips: öppna med ?id=... för att kunna ladda upp till ditt konto)`);
+      }
+    }catch(err){
+      console.error(err);
+      setStatus("");
+      $("empty").style.display = "block";
+      $("empty").textContent = "Kunde inte hämta bilder. Kontrollera Sheety-URL och CORS.";
+    }
+  }
+
+  // ===== Upload handler =====
+  async function handleUpload(files){
+    const list = Array.from(files || []);
+    if (!list.length) return;
+
+    setStatus("Laddar upp…");
+    $("fileInput").value = "";
+
+    let ok = 0;
+    for (let i = 0; i < list.length; i++){
+      const f = list[i];
+      try{
+        setStatus(`Laddar upp (${i+1}/${list.length})…`);
+        const url = await uploadToCloudinary(f);
+
+        setStatus(`Sparar till galleriet (${i+1}/${list.length})…`);
+        await appendUploadToMyGallery(url);
+
+        ok++;
+      }catch(err){
+        console.error(err);
+        alert(
+          "Uppladdningen misslyckades:\n\n" +
+          (err?.message || err) +
+          "\n\nTips: Se till att sidan öppnas med ?id=... och att Cloudinary preset är UNSIGNED: " + UPLOAD_PRESET
+        );
+        break;
+      }
+    }
+
+    if (ok){
+      toast("Uppladdat!");
+      await loadAllImages();
+    } else {
+      setStatus("");
+    }
+  }
+
+  // ===== Events =====
+  $("refreshBtn").addEventListener("click", loadAllImages);
+  $("copyLinksBtn").addEventListener("click", copyAllLinks);
+
+  $("fileInput").addEventListener("change", (e) => {
+    handleUpload(e.target.files);
+  });
+
+  $("closeBtn").addEventListener("click", closeModal);
+  $("copyBtn").addEventListener("click", copyCurrent);
+  $("modal").addEventListener("click", (e)=>{ if (e.target === $("modal")) closeModal(); });
+  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeModal(); });
+
+  // Init
+  loadAllImages();
+</script>
+</body>
+</html>
